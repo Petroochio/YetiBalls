@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>p2.js Canvas example</title>
+    <meta charset="utf-8">
+    <script src="p2.js-master/build/p2.js"></script>
+  </head>
+  <body>
+
+    <!-- The canvas, where we draw stuff -->
+    <canvas width="600" height="400" id="myCanvas"></canvas>
+
+    <script>
+      var canvas, ctx, w, h,
+          world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown;
+
+      init();
+      animate();
+
+      function init(){
+        slopeVerts = generateSlope(0, 60, 30, 0, 30);
+        slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
+
+
+        // Init canvas
+        canvas = document.getElementById("myCanvas");
+        w = canvas.width;
+        h = canvas.height;
+
+        ctx = canvas.getContext("2d");
+        ctx.lineWidth = .2;
+
+        // Init p2.js
+        world = new p2.World();
+
+        // Add a circle
+        circleShape = new p2.Circle(3);
+        circleBody = new p2.Body({ mass:4, position:[5,20] });
+        circleShape.material = new p2.Material();
+        circleBody.addShape(circleShape);
+        world.addBody(circleBody);
+
+        /*
+        planeShape = new p2.Plane();
+        planeBody = new p2.Body();
+        planeBody.addShape(planeShape);
+        world.addBody(planeBody);*/
+        planeBody = new p2.Body({mass:0, position:[0,0]});
+        planeBody.fromPolygon(slopeVerts);
+       // planeBody.
+        world.addBody(planeBody);
+        
+
+        window.onkeydown = function(e){
+          if(e.keyCode == 32) {
+            console.log('p');
+            spacedown = true;
+          }
+        };
+        window.onkeyup = function(e){
+          if(e.keyCode == 32) {
+            console.log('p');
+            spacedown = false;
+          }
+        };
+
+
+      }
+
+      function drawCircle(){
+        ctx.beginPath();
+        var x = circleBody.position[0],
+            y = circleBody.position[1],
+            radius = circleShape.radius;
+        ctx.arc(x,y,radius,0,2*Math.PI);
+        ctx.stroke();
+      }
+
+      function generateSlope(x1, x2, y1, y2, verts) {
+        var slope = [];
+        var width = x2 - x1;
+        var periods = .85;
+        var amp = (y1 - y2)/2;
+        var twoPI = 2 * 3.1415926;
+        var frequency = twoPI/width * periods;
+        var y3;
+        
+        slope[0] = [x1,y1];
+
+        for(var i = 1; i < verts; i++) {
+          var tempX;
+          var tempY;
+          tempX = x1 + (x2 - x1)/verts * i;
+          tempY = (12*(Math.cos(frequency*tempX)) - tempX/2);
+          slope[i] = [tempX, tempY];
+          
+          if(i == verts - 1) {
+            y3 = tempY;
+          }
+        }
+        slope[verts] = [x2, y3 - 20];
+        slope[verts + 1] = [x1, y3 - 20];
+        slope
+        return slope;
+      }
+
+      function render(){
+        // Clear the canvas
+        ctx.clearRect(0,0,w,h);
+
+        // Transform the canvas
+        // Note that we need to flip the y axis since Canvas pixel coordinates
+        // goes from top to bottom, while physics does the opposite.
+        ctx.save();
+        ctx.translate(w/2, h/2);  // Translate to the center
+        ctx.scale(1, -1);       // Zoom in and flip y axis
+        
+        ctx.beginPath();
+        ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
+        slopeVerts2.forEach(function(coords){
+          ctx.lineTo(coords[0], coords[1]);
+        });
+        ctx.stroke();
+        ctx.closePath();
+        // Draw all bodies
+        drawCircle();
+        //drawPlane();
+
+        // Restore transform
+        ctx.restore();
+      }
+
+      // Animation loop
+      function animate(){
+        requestAnimationFrame(animate);
+
+        if(spacedown) {
+          
+          //circleBody.data.force[0] = 100;
+          world.bodies[0].force[1] = -100;
+          world.bodies[0].force[0] = 5;
+        }
+         world.bodies[0].force[0] = 5;
+        // Move physics bodies forward in time
+        world.step(1/40);
+
+        // Render scene
+        render();
+      }
+    </script>
+
+  </body>
+</html>
