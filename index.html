@@ -13,6 +13,7 @@
     <script>
       var canvas, ctx, w, h,
           world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown;
+      var levelDrawCallbacks = [];
 
       init();
       animate();
@@ -20,22 +21,20 @@
       function init(){
         slopeVerts = generateSlope(0, 60, 30, 0, 30);
         slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
-
-
         // Init canvas
         canvas = document.getElementById("myCanvas");
         w = canvas.width;
         h = canvas.height;
 
         ctx = canvas.getContext("2d");
-        ctx.lineWidth = .2;
+        ctx.lineWidth = .5;
 
         // Init p2.js
         world = new p2.World();
 
         // Add a circle
-        circleShape = new p2.Circle(3);
-        circleBody = new p2.Body({ mass:4, position:[5,20] });
+        circleShape = new p2.Circle(5);
+        circleBody = new p2.Body({ mass:4, position:[5,40] });
         circleShape.material = new p2.Material();
         circleBody.addShape(circleShape);
         world.addBody(circleBody);
@@ -49,7 +48,20 @@
         planeBody.fromPolygon(slopeVerts);
        // planeBody.
         world.addBody(planeBody);
-        
+        //level ex
+        var level = {
+          houses: [
+            {
+              pos: {x: 20, y: 0},
+              width: 30,
+              height: 10,
+              roofHeight: 5
+            }
+          ],
+          width: 100
+        }
+        //Make a level object
+        generateLevel(slopeVerts2[29], level, world);
 
         window.onkeydown = function(e){
           if(e.keyCode == 32) {
@@ -63,8 +75,6 @@
             spacedown = false;
           }
         };
-
-
       }
 
       function drawCircle(){
@@ -112,7 +122,7 @@
         // Note that we need to flip the y axis since Canvas pixel coordinates
         // goes from top to bottom, while physics does the opposite.
         ctx.save();
-        ctx.translate(w/2, h/2);  // Translate to the center
+        ctx.translate(w/3, h/2);  // Translate to the center
         ctx.scale(1, -1);       // Zoom in and flip y axis
         
         ctx.beginPath();
@@ -123,6 +133,7 @@
         ctx.stroke();
         ctx.closePath();
         // Draw all bodies
+        levelDrawCallbacks.forEach(function(draw){ draw(); });
         drawCircle();
         //drawPlane();
 
@@ -147,18 +158,38 @@
         // Render scene
         render();
       }
-      /*level ex
-      var level = {
-        houses: [
-          {
-            pos: {x: int, y: int},
-            width: int,
-            height: int,
-            roofHeight: int
-          }
-        ],
-        width: int
-      }*/
+      
+      function generateLevel(start, lvl, world) {
+        levelDrawCallbacks.push(function(){
+          ctx.beginPath();
+          ctx.moveTo(start[0] + 30, start[1]);
+          ctx.lineTo(start[0] + 50, start[1] - 20);
+          ctx.lineTo(start[0] + 50 + lvl.width, start[1] - 20);
+          ctx.lineTo(start[0] + 70 + lvl.width, start[1]);
+          ctx.stroke();
+          ctx.closePath();
+        });
+        var tri1 = new p2.Body({mass:0, position:[0,0]});
+        tri1.fromPolygon([[start[0] + 30, start[1]], 
+          [start[0] + 50, start[1] - 20], [start[0] + 30, start[1] - 20]]);
+
+        world.addBody(tri1);
+
+        var tri2 = new p2.Body({mass:0, position:[0,0]});
+        tri2.fromPolygon([[start[0] + 50, start[1] - 20], 
+          [start[0] + 50 + lvl.width, start[1] - 20], [start[0] + 30, start[1] - 40]]);
+
+        world.addBody(tri2);
+
+        var tri3 = new p2.Body({mass:0, position:[0,0]});
+        tri3.fromPolygon([[start[0] + 50 + lvl.width, start[1] - 20], 
+          [start[0] + 70 + lvl.width, start[1]], [start[0] + 70 + lvl.width, start[1] - 20]]);
+
+        world.addBody(tri3);
+        levelDrawCallbacks.push(function(){
+          //console.log("house");
+        });
+      }
     </script>
 
   </body>
