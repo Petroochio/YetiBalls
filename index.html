@@ -14,6 +14,7 @@
       var canvas, ctx, w, h,
           world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown;
       var levelDrawCallbacks = [];
+      var collisionObjs = [];
 
       init();
       animate();
@@ -37,6 +38,7 @@
         circleBody = new p2.Body({ mass:4, position:[5,40] });
         circleShape.material = new p2.Material();
         circleBody.addShape(circleShape);
+        circleBody.circleType = "circle1";
         world.addBody(circleBody);
 
         //create the main slope
@@ -71,16 +73,45 @@
             spacedown = false;
           }
         };
+        world.on("beginContact", function(evt){
+          if(evt.bodyA.circleType == "circle1") {
+            var canAdd = true;
+            collisionObjs.forEach(function(body){
+              if(body == evt.bodyA)
+                canAdd = false;
+            });
+            if(canAdd)
+              collisionObjs.push(evt.bodyA);
+          }
+          if(evt.bodyB.circleType == "circle1") {
+            var canAdd = true;
+            collisionObjs.forEach(function(body){
+              if(body == evt.bodyB)
+                canAdd = false;
+            });
+            if(canAdd)
+              collisionObjs.push(evt.bodyB);
+          }
+        });
       }
       //Draws the circle
       //This is gonna go away when I make my own circles
-      function drawCircle(){
+      function drawCircle(circle){
         ctx.beginPath();
-        var x = circleBody.position[0],
-            y = circleBody.position[1],
-            radius = circleShape.radius;
+        var x = circle.position[0],
+            y = circle.position[1],
+            radius = circle.shapes[0].radius;
         ctx.arc(x,y,radius,0,2*Math.PI);
         ctx.stroke();
+      }
+
+      function addCircle(r, m, p, type) {
+        circleShape = new p2.Circle(r);
+        circleBody = new p2.Body({ mass:m, position:p });
+        circleShape.material = new p2.Material();
+        circleBody.addShape(circleShape);
+        circleBody.circleType = type;
+        world.addBody(circleBody);
       }
       //this is a naughty little function that generates verts
       function generateSlope(x1, x2, y1, y2, verts) {
@@ -131,8 +162,12 @@
         ctx.closePath();
         // Draw all bodies
         levelDrawCallbacks.forEach(function(draw){ draw(); });
-        drawCircle();
-
+        //drawCircle();
+        world.bodies.forEach(function(body){
+          if(body.circleType == "circle1" || body.circleType == "circle2"){
+            drawCircle(body);
+          }
+        });
         // Restore transform
         ctx.restore();
       }
@@ -142,15 +177,27 @@
         requestAnimationFrame(animate);
 
         if(spacedown) {
-          
           //Push the circle if spacebar is down
-          world.bodies[0].force[1] = -100;
-          world.bodies[0].force[0] = 5;
+          if(world.bodies[0].circleType == "circle1"){
+            world.bodies[0].force[1] = -100;
+            world.bodies[0].force[0] = 5; 
+          }
+          
         }
-         world.bodies[0].force[0] = 5;
+         //world.bodies[0].force[0] = 5;
         // Move physics bodies forward in time
         world.step(1/40);
-
+        collisionObjs.forEach(function(obj){
+          if(obj.position[0] > 60) {
+            world.bodiesToBeRemoved.push(obj);
+            addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
+            addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
+            addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
+            addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
+            addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
+          }
+        });
+        collisionObjs = []; 
         // Render scene
         render();
       }
