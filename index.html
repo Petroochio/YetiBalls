@@ -51,16 +51,22 @@
         var level = {
           houses: [
             {
-              pos: {x: 20, y: 0},
-              width: 10,
-              height: 10,
-              roofHeight: 30
+              pos: {x: 65, y: 0},
+              width: 20,
+              height: 15,
+              roofHeight: 10
             },
             {
-              pos: {x: 50, y: 0},
+              pos: {x: 40, y: 0},
               width: 10,
               height: 10,
-              roofHeight: 30
+              roofHeight: 10
+            },
+            {
+              pos: {x: 20, y: 0},
+              width: 5,
+              height: 12,
+              roofHeight: 10
             }
           ],
           width: 100
@@ -207,13 +213,13 @@
         if(spacedown) {
            if(!canShoot) { 
             world.bodies.forEach(function(body){
-              if(body.circleType == "circle1" || body.circleType == "circle2"){
+              if(body.circleType == "circle1" ){
                body.force[1] = -100;
                body.force[0] = 5; 
               }
             });
           } else if(shotsLeft > 0){
-            addCircle(5, 4, [5,40], "circle1");
+            addCircle(2, 4, [5,40], "circle1");
             canShoot = false;
             shotsLeft --;
           }
@@ -222,6 +228,7 @@
         // Move physics bodies forward in time
         world.step(1/30);
         collisionObjs.forEach(function(obj){
+
           if(obj.position[0] > 60) {
             world.bodiesToBeRemoved.push(obj);
             addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
@@ -230,6 +237,8 @@
             addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
             addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
             canShoot = true;
+          } else {
+            obj.shapes[0].radius += .1;
           }
         });
         collisionObjs = []; 
@@ -240,12 +249,13 @@
       //also adds draw callbacks to be drawn by canvas
       function generateLevel(start, lvl, world) {
         //Draw callback for the valley, hard coded mostly right now
+        var startDist = 5;
         levelDrawCallbacks.push(function(){
           ctx.beginPath();
-          ctx.moveTo(start[0] + 30, start[1]);
-          ctx.lineTo(start[0] + 50, start[1] - 20);
-          ctx.lineTo(start[0] + 50 + lvl.width, start[1] - 20);
-          ctx.lineTo(start[0] + 70 + lvl.width, start[1]);
+          ctx.moveTo(start[0] + startDist, start[1]);
+          ctx.lineTo(start[0] + startDist + 10, start[1] - 20);
+          ctx.lineTo(start[0] + startDist + lvl.width, start[1] - 20);
+          ctx.lineTo(start[0] + startDist + 30 + lvl.width, start[1]);
           ctx.stroke();
           ctx.closePath();
         });
@@ -264,20 +274,21 @@
 
         world.addBody(tri2);*/
         //right
+        
         var tri3 = new p2.Body({mass:0, position:[0,0]});
-        tri3.fromPolygon([[start[0] + 30, start[1]],
-          [start[0] + 50, start[1] - 20],
-          [start[0] + 50 + lvl.width, start[1] - 20],
-          [start[0] + 70 + lvl.width, start[1]],
-          [start[0] + 70 + lvl.width, start[1]-40],
-          [start[0] + 50, start[1]-40]]);
+        tri3.fromPolygon([[start[0] + startDist, start[1]],
+          [start[0] + startDist + 10, start[1] - 20],
+          [start[0] + startDist + lvl.width, start[1] - 20],
+          [start[0] + startDist + 30 + lvl.width, start[1]],
+          [start[0] + startDist + 30 + lvl.width, start[1]-40],
+          [start[0] + startDist + 10, start[1]-40]]);
 
         world.addBody(tri3);
         //this is where the house code that I haven't done yet starts
         lvl.houses.forEach(function(house){
           
           //Bottom left corner
-          var xStart = start[0] + 50 + house.pos.x;
+          var xStart = start[0] + startDist + house.pos.x;
           var yStart = start[1] - 20;
           console.log(house);
           //Make main part of house
@@ -297,9 +308,9 @@
           });
           //Make Roof
           var roof = new p2.Body({mass:10, position:[0,0]});
-          roof.fromPolygon([[xStart, yStart + house.height + 1], 
-            [xStart + house.width/2, yStart + house.height + 1 + house.roofHeight],
-            [xStart + house.width, yStart + house.height + 1]]);
+          roof.fromPolygon([[xStart, yStart + house.height], 
+            [xStart + house.width/2, yStart + house.height + house.roofHeight],
+            [xStart + house.width, yStart + house.height]]);
           roof.type = "roof";
 
           world.addBody(roof);
