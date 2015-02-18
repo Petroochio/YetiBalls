@@ -15,7 +15,8 @@
           world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown;
       var levelDrawCallbacks = [];
       var collisionObjs = [];
-
+      var shotsLeft = 3;
+      var canShoot = true;
       init();
       animate();
 
@@ -34,12 +35,12 @@
         world = new p2.World();
 
         // Add a circle
-        circleShape = new p2.Circle(5);
+        /*circleShape = new p2.Circle(5);
         circleBody = new p2.Body({ mass:4, position:[5,40] });
         circleShape.material = new p2.Material();
         circleBody.addShape(circleShape);
         circleBody.circleType = "circle1";
-        world.addBody(circleBody);
+        world.addBody(circleBody);*/
 
         //create the main slope
         planeBody = new p2.Body({mass:0, position:[0,0]});
@@ -177,12 +178,18 @@
         requestAnimationFrame(animate);
 
         if(spacedown) {
-          //Push the circle if spacebar is down
-          if(world.bodies[0].circleType == "circle1"){
-            world.bodies[0].force[1] = -100;
-            world.bodies[0].force[0] = 5; 
+           if(!canShoot) { 
+            world.bodies.forEach(function(body){
+              if(body.circleType == "circle1" || body.circleType == "circle2"){
+               body.force[1] = -100;
+               body.force[0] = 5; 
+              }
+            });
+          } else if(shotsLeft > 0){
+            addCircle(5, 4, [5,40], "circle1");
+            canShoot = false;
+            shotsLeft --;
           }
-          
         }
          //world.bodies[0].force[0] = 5;
         // Move physics bodies forward in time
@@ -195,6 +202,7 @@
             addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
             addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
             addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
+            canShoot = true;
           }
         });
         collisionObjs = []; 
@@ -234,8 +242,45 @@
 
         world.addBody(tri3);
         //this is where the house code that I haven't done yet starts
-        levelDrawCallbacks.push(function(){
-          //console.log("house");
+        lvl.houses.forEach(function(house){
+          
+          //Bottom left corner
+          var xStart = start[0] + 50 + house.pos.x;
+          var yStart = start[1] - 20;
+          console.log(house);
+          //Make main part of house
+          var base = new p2.Body({mass:0, position:[0,0]});
+          base.fromPolygon([[xStart, yStart], [xStart, yStart + house.height], 
+            [xStart + house.width, yStart + house.height], [xStart + house.width, yStart]]);
+          world.addBody(base);
+
+          levelDrawCallbacks.push(function(){
+            ctx.beginPath();
+            ctx.moveTo(xStart, yStart);
+            ctx.lineTo(xStart, yStart + house.height);
+            ctx.lineTo(xStart + house.width, yStart + house.height);
+            ctx.lineTo(xStart + house.width, yStart);
+            ctx.stroke();
+            ctx.closePath();
+          });
+          //Make Roof
+          var roof = new p2.Body({mass:0, position:[0,0]});
+          roof.fromPolygon([[xStart, yStart + house.height + 1], 
+            [xStart + house.width/2, yStart + house.height + 1 + house.roofHeight],
+            [xStart + house.width, yStart + house.height + 1]]);
+
+          world.addBody(roof);
+          //Roof draw callback
+          levelDrawCallbacks.push(function(){
+            ctx.beginPath();
+            ctx.moveTo(xStart, yStart + house.height + 1);
+            ctx.lineTo(xStart + house.width/2, yStart + house.height + 1 + house.roofHeight);
+            ctx.lineTo(xStart + house.width, yStart + house.height + 1);
+            ctx.stroke();
+            ctx.closePath();
+          });
+
+          console.log(world.bodies);
         });
       }
     </script>
