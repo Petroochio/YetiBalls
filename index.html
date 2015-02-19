@@ -15,7 +15,7 @@
           world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown;
       var levelDrawCallbacks = [];
       var collisionObjs = [];
-      var shotsLeft = 3;
+      var shotsLeft = 100;
       var canShoot = true;
       init();
       animate();
@@ -52,8 +52,8 @@
           houses: [
             {
               pos: {x: 65, y: 0},
-              width: 20,
-              height: 15,
+              width: 15,
+              height: 14,
               roofHeight: 10
             },
             {
@@ -87,7 +87,7 @@
           }
         };
         world.on("beginContact", function(evt){
-          if(evt.bodyA.circleType == "circle1") {
+          if(evt.bodyA.circleType == "circle1" || evt.bodyA.circleType == "circle2" ) {
             var canAdd = true;
             collisionObjs.forEach(function(body){
               if(body == evt.bodyA)
@@ -124,6 +124,7 @@
         circleShape.material = new p2.Material();
         circleBody.addShape(circleShape);
         circleBody.circleType = type;
+        circleBody.lifeTime = 0;
         world.addBody(circleBody);
       }
       //this is a naughty little function that generates verts
@@ -176,6 +177,8 @@
         // Clear the canvas
         ctx.clearRect(0,0,w,h);
 
+        var transX = 0;
+        var transY = 0;
         // Transform the canvas
         // Note that we need to flip the y axis since Canvas pixel coordinates
         // goes from top to bottom, while physics does the opposite.
@@ -215,21 +218,26 @@
             world.bodies.forEach(function(body){
               if(body.circleType == "circle1" ){
                body.force[1] = -100;
-               body.force[0] = 5; 
+               body.force[0] = 5;
               }
             });
           } else if(shotsLeft > 0){
-            addCircle(2, 4, [5,40], "circle1");
+            addCircle(5, 4, [5,40], "circle1");
             canShoot = false;
             shotsLeft --;
           }
         }
+        world.bodies.forEach(function(body){
+            if(body.circleType == "circle1" ){
+             body.lifeTime ++; 
+            }
+        });
+
          //world.bodies[0].force[0] = 5;
         // Move physics bodies forward in time
         world.step(1/30);
         collisionObjs.forEach(function(obj){
-
-          if(obj.position[0] > 60) {
+          if(obj.position[0] > 60 && obj.circleType == "circle1") {
             world.bodiesToBeRemoved.push(obj);
             addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
             addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
@@ -237,8 +245,12 @@
             addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
             addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
             canShoot = true;
-          } else {
-            obj.shapes[0].radius += .1;
+          } else if(obj.circleType == "circle2" && obj.position[0] < 60){
+            //obj.shapes[0].radius += .1;
+            world.bodiesToBeRemoved.push(obj);
+          } else if( obj.circleType == "circle1" && obj.lifeTime > 300 ) {
+            world.bodiesToBeRemoved.push(obj);
+            canShoot = true;
           }
         });
         collisionObjs = []; 
@@ -259,20 +271,6 @@
           ctx.stroke();
           ctx.closePath();
         });
-        //Split the valley into 3 triangles for the ball to collide with
-        //Left
-        /*
-        var tri1 = new p2.Body({mass:0, position:[0,0]});
-        tri1.fromPolygon([[start[0] + 30, start[1]], 
-          [start[0] + 50, start[1] - 20], [start[0] + 30, start[1] - 20]]);
-
-        world.addBody(tri1);
-        //Middle
-        var tri2 = new p2.Body({mass:0, position:[0,0]});
-        tri2.fromPolygon([[start[0] + 50, start[1] - 20], 
-          [start[0] + 50 + lvl.width, start[1] - 20], [start[0] + 30, start[1] - 40]]);
-
-        world.addBody(tri2);*/
         //right
         
         var tri3 = new p2.Body({mass:0, position:[0,0]});
@@ -316,12 +314,7 @@
           world.addBody(roof);
           //Roof draw callback
           levelDrawCallbacks.push(function(){
-           /* ctx.beginPath();
-            ctx.moveTo(xStart, yStart + house.height + 1);
-            ctx.lineTo(xStart + house.width/2, yStart + house.height + 1 + house.roofHeight);
-            ctx.lineTo(xStart + house.width, yStart + house.height + 1);
-            ctx.stroke();
-            ctx.closePath();*/
+           
           });
 
           
