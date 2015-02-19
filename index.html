@@ -100,13 +100,19 @@
         }
         //Draws the circle
         //This is gonna go away when I make my own circles
-        function drawCircle(circle){
+        function drawCircle(circle, fill){
           ctx.beginPath();
           var x = circle.position[0],
               y = circle.position[1],
               radius = circle.shapes[0].radius;
           ctx.arc(x,y,radius,0,2*Math.PI);
           ctx.stroke();
+          if(fill){
+            ctx.save();
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.restore();
+          }
         }
 
         function addCircle(r, m, p, type) {
@@ -200,8 +206,14 @@
 
           //drawCircle();
           world.bodies.forEach(function(body){
-            if(body.circleType == "circle1" || body.circleType == "circle2"){
+            if(body.circleType == "circle2" ){
               drawCircle(body);
+            }else if( body.circleType == "circle1"){
+
+              if(spacedown)
+                drawCircle(body, 'blue');
+              else
+                drawCircle(body);
             } else if(body.type == "roof"){
               drawRoof(body);
               body.force[1] = -15;
@@ -233,7 +245,7 @@
              if(!canShoot) { 
               world.bodies.forEach(function(body){
                 if(body.circleType == "circle1" ){
-                 body.force[1] = -100;
+                 body.force[1] = -120;
                  body.force[0] = 5;
                 }
               });
@@ -247,13 +259,18 @@
           world.bodies.forEach(function(body){
               if(body.circleType == "circle1" ){
                body.lifeTime ++; 
+               if( body.position[1] < -150) {
+                world.bodiesToBeRemoved.push(body);
+                canShoot = true;  
+               }
               }
           });
 
            //world.bodies[0].force[0] = 5;
           // Move physics bodies forward in time
-          world.step(1/30);
+          world.step(1/20);
           collisionObjs.forEach(function(obj){
+            
             if(obj.position[0] > 60 && obj.circleType == "circle1") {
               world.bodiesToBeRemoved.push(obj);
               addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
@@ -265,7 +282,7 @@
             } else if(obj.circleType == "circle2" && obj.position[0] < 60){
               //obj.shapes[0].radius += .1;
               world.bodiesToBeRemoved.push(obj);
-            } else if( obj.circleType == "circle1" && obj.lifeTime > 300 ) {
+            } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
               world.bodiesToBeRemoved.push(obj);
               canShoot = true;
             }
