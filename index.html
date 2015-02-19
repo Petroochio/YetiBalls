@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>p2.js Canvas example</title>
+    <title>Yeti Balls</title>
     <meta charset="utf-8">
     <script src="p2.js-master/build/p2.js"></script>
   </head>
@@ -17,6 +17,7 @@
       var collisionObjs = [];
       var shotsLeft = 100;
       var canShoot = true;
+      var canFire = true;
       init();
       animate();
 
@@ -84,6 +85,8 @@
           if(e.keyCode == 32) {
             console.log('p');
             spacedown = false;
+            if(canShoot)
+              canFire = true;
           }
         };
         world.on("beginContact", function(evt){
@@ -93,6 +96,7 @@
               if(body == evt.bodyA)
                 canAdd = false;
             });
+
             if(canAdd)
               collisionObjs.push(evt.bodyA);
           }
@@ -205,8 +209,17 @@
             body.force[1] = -15;
           }
         });
+        ctx.save();
+        ctx.scale(1,-1);
+        drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
         // Restore transform
         ctx.restore();
+        ctx.restore();
+      }
+      function drawText( text, x, y, size, color ) {
+        ctx.font = "bold "+size+"px Monospace";
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y);
       }
 
       // Animation loop
@@ -221,9 +234,10 @@
                body.force[0] = 5;
               }
             });
-          } else if(shotsLeft > 0){
+          } else if(canFire && shotsLeft > 0){
             addCircle(5, 4, [5,40], "circle1");
             canShoot = false;
+            canFire = false;
             shotsLeft --;
           }
         }
