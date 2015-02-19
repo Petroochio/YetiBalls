@@ -12,7 +12,7 @@
 
     <script>
       var canvas, ctx, w, h,
-          world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown;
+          world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
       var levelDrawCallbacks = [];
       var collisionObjs = [];
       var shotsLeft = 100;
@@ -34,14 +34,6 @@
 
         // Init p2.js
         world = new p2.World();
-
-        // Add a circle
-        /*circleShape = new p2.Circle(5);
-        circleBody = new p2.Body({ mass:4, position:[5,40] });
-        circleShape.material = new p2.Material();
-        circleBody.addShape(circleShape);
-        circleBody.circleType = "circle1";
-        world.addBody(circleBody);*/
 
         //create the main slope
         planeBody = new p2.Body({mass:0, position:[0,0]});
@@ -70,20 +62,22 @@
               roofHeight: 10
             }
           ],
-          width: 100
-        }
+          width: 100,
+          valleyPos: {x: 120, y: -75}
+        };
+        currentLevel = level;
         //Make a level object
         generateLevel(slopeVerts2[29], level, world);
         //spacebar handler
         window.onkeydown = function(e){
           if(e.keyCode == 32) {
-            console.log('p');
+            
             spacedown = true;
           }
         };
         window.onkeyup = function(e){
           if(e.keyCode == 32) {
-            console.log('p');
+            
             spacedown = false;
             if(canShoot)
               canFire = true;
@@ -100,15 +94,6 @@
             if(canAdd)
               collisionObjs.push(evt.bodyA);
           }
-       /*   if(evt.bodyB.circleType == "circle1") {
-            var canAdd = true;
-            collisionObjs.forEach(function(body){
-              if(body == evt.bodyB)
-                canAdd = false;
-            });
-            if(canAdd)
-              collisionObjs.push(evt.bodyB);
-          }*/
         });
       }
       //Draws the circle
@@ -181,14 +166,25 @@
         // Clear the canvas
         ctx.clearRect(0,0,w,h);
 
-        var transX = 0;
-        var transY = 0;
+        var transX = w/4;
+        var transY = h/2;
+        var scaleMult = 1;
+          
+        world.bodies.forEach(function(body){
+          if(body.circleType == "circle1" ){
+              if(body.position[0] > 60) scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
+           transX = 20-body.position[0];
+              transY = h/3 + body.position[1];
+              scaleMult = scaleMult < .7 ? .7 : scaleMult;
+          }
+        });
         // Transform the canvas
         // Note that we need to flip the y axis since Canvas pixel coordinates
         // goes from top to bottom, while physics does the opposite.
         ctx.save();
-        ctx.translate(w/4, h/2);  // Translate to the center
-        ctx.scale(2, -2);       // Zoom in and flip y axis
+        ctx.translate(transX, transY);
+        if(canShoot) ctx.scale(2, -2);
+        else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
         //Draw the start ramp
         ctx.beginPath();
         ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
@@ -216,6 +212,11 @@
         ctx.restore();
         ctx.restore();
       }
+
+      function lerp(min, max, val) {
+        return (val-min)/max;
+      }
+
       function drawText( text, x, y, size, color ) {
         ctx.font = "bold "+size+"px Monospace";
         ctx.fillStyle = color;
@@ -275,34 +276,34 @@
       //also adds draw callbacks to be drawn by canvas
       function generateLevel(start, lvl, world) {
         //Draw callback for the valley, hard coded mostly right now
-        var startDist = 5;
+        var xOffSet = 10;
+          var yOffSet = 20;
         levelDrawCallbacks.push(function(){
           ctx.beginPath();
-          ctx.moveTo(start[0] + startDist, start[1]);
-          ctx.lineTo(start[0] + startDist + 10, start[1] - 20);
-          ctx.lineTo(start[0] + startDist + lvl.width, start[1] - 20);
-          ctx.lineTo(start[0] + startDist + 30 + lvl.width, start[1]);
+            ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
+          ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
+          ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
+          ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
           ctx.stroke();
           ctx.closePath();
         });
         //right
         
         var tri3 = new p2.Body({mass:0, position:[0,0]});
-        tri3.fromPolygon([[start[0] + startDist, start[1]],
-          [start[0] + startDist + 10, start[1] - 20],
-          [start[0] + startDist + lvl.width, start[1] - 20],
-          [start[0] + startDist + 30 + lvl.width, start[1]],
-          [start[0] + startDist + 30 + lvl.width, start[1]-40],
-          [start[0] + startDist + 10, start[1]-40]]);
+        tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
+          [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet],
+          [lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet],
+          [lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y],
+          [lvl.valleyPos.x + (xOffSet*3) + lvl.width, lvl.valleyPos.y-(yOffSet*2)],
+          [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
 
         world.addBody(tri3);
         //this is where the house code that I haven't done yet starts
         lvl.houses.forEach(function(house){
           
           //Bottom left corner
-          var xStart = start[0] + startDist + house.pos.x;
-          var yStart = start[1] - 20;
-          console.log(house);
+          var xStart = lvl.valleyPos.x + house.pos.x;
+          var yStart = lvl.valleyPos.y - yOffSet;
           //Make main part of house
           var base = new p2.Body({mass:0, position:[0,0]});
           base.fromPolygon([[xStart, yStart], [xStart, yStart + house.height], 
@@ -326,12 +327,6 @@
           roof.type = "roof";
 
           world.addBody(roof);
-          //Roof draw callback
-          levelDrawCallbacks.push(function(){
-           
-          });
-
-          
         });
       }
     </script>
