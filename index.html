@@ -11,324 +11,328 @@
     <canvas width="600" height="400" id="myCanvas"></canvas>
 
     <script>
-      var canvas, ctx, w, h,
-          world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
-      var levelDrawCallbacks = [];
-      var collisionObjs = [];
-      var shotsLeft = 100;
-      var canShoot = true;
-      var canFire = true;
-      init();
-      animate();
+    "use strict";
+    (function(){
+        var canvas, ctx, w, h,
+            world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
+        var levelDrawCallbacks = [];
+        var collisionObjs = [];
+        var shotsLeft = 100;
+        var canShoot = true;
+        var canFire = true;
+        init();
+        animate();
 
-      function init(){
-        slopeVerts = generateSlope(0, 60, 30, 0, 30);
-        slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
-        // Init canvas
-        canvas = document.getElementById("myCanvas");
-        w = canvas.width;
-        h = canvas.height;
+        function init(){
+          slopeVerts = generateSlope(0, 60, 30, 0, 30);
+          slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
+          // Init canvas
+          canvas = document.getElementById("myCanvas");
+          w = canvas.width;
+          h = canvas.height;
 
-        ctx = canvas.getContext("2d");
-        ctx.lineWidth = .5;
+          ctx = canvas.getContext("2d");
+          ctx.lineWidth = .5;
 
-        // Init p2.js
-        world = new p2.World();
+          // Init p2.js
+          world = new p2.World();
 
-        //create the main slope
-        planeBody = new p2.Body({mass:0, position:[0,0]});
-        planeBody.fromPolygon(slopeVerts);
-       // planeBody.
-        world.addBody(planeBody);
-        //level ex
-        var level = {
-          houses: [
-            {
-              pos: {x: 65, y: 0},
-              width: 15,
-              height: 14,
-              roofHeight: 10
-            },
-            {
-              pos: {x: 40, y: 0},
-              width: 10,
-              height: 10,
-              roofHeight: 10
-            },
-            {
-              pos: {x: 20, y: 0},
-              width: 5,
-              height: 12,
-              roofHeight: 10
-            }
-          ],
-          width: 100,
-          valleyPos: {x: 120, y: -75}
-        };
-        currentLevel = level;
-        //Make a level object
-        generateLevel(slopeVerts2[29], level, world);
-        //spacebar handler
-        window.onkeydown = function(e){
-          if(e.keyCode == 32) {
-            
-            spacedown = true;
-          }
-        };
-        window.onkeyup = function(e){
-          if(e.keyCode == 32) {
-            
-            spacedown = false;
-            if(canShoot)
-              canFire = true;
-          }
-        };
-        world.on("beginContact", function(evt){
-          if(evt.bodyA.circleType == "circle1" || evt.bodyA.circleType == "circle2" ) {
-            var canAdd = true;
-            collisionObjs.forEach(function(body){
-              if(body == evt.bodyA)
-                canAdd = false;
-            });
-
-            if(canAdd)
-              collisionObjs.push(evt.bodyA);
-          }
-        });
-      }
-      //Draws the circle
-      //This is gonna go away when I make my own circles
-      function drawCircle(circle){
-        ctx.beginPath();
-        var x = circle.position[0],
-            y = circle.position[1],
-            radius = circle.shapes[0].radius;
-        ctx.arc(x,y,radius,0,2*Math.PI);
-        ctx.stroke();
-      }
-
-      function addCircle(r, m, p, type) {
-        circleShape = new p2.Circle(r);
-        circleBody = new p2.Body({ mass:m, position:p });
-        circleShape.material = new p2.Material();
-        circleBody.addShape(circleShape);
-        circleBody.circleType = type;
-        circleBody.lifeTime = 0;
-        world.addBody(circleBody);
-      }
-      //this is a naughty little function that generates verts
-      function generateSlope(x1, x2, y1, y2, verts) {
-        var slope = [];
-        var width = x2 - x1;
-        var periods = .85;
-        var amp = (y1 - y2)/2;
-        var twoPI = 2 * 3.1415926;
-        var frequency = twoPI/width * periods;
-        var y3;
-        
-        slope[0] = [x1,y1];
-        //magic
-        for(var i = 1; i < verts; i++) {
-          var tempX;
-          var tempY;
-          tempX = x1 + (x2 - x1)/verts * i;
-          tempY = (12*(Math.cos(frequency*tempX)) - tempX/2);
-          slope[i] = [tempX, tempY];
-          
-          if(i == verts - 1) {
-            y3 = tempY;
-          }
-        }
-        slope[verts] = [x2, y3 - 20];
-        slope[verts + 1] = [x1, y3 - 20];
-        //done
-        return slope;
-      }
-
-      function drawRoof(roof) {
-        console.log(roof);
-        ctx.save();
-        
-        ctx.beginPath();
-        ctx.translate(roof.position[0], roof.position[1]);
-        ctx.rotate(roof.angle);
-        
-        ctx.moveTo(roof.concavePath[0][0], roof.concavePath[0][1]);
-        ctx.lineTo(roof.concavePath[1][0], roof.concavePath[1][1]);
-        ctx.lineTo(roof.concavePath[2][0], roof.concavePath[2][1]);
-        ctx.closePath();
-        ctx.stroke();
-        
-        ctx.restore();
-      }
-
-      function render(){
-        // Clear the canvas
-        ctx.clearRect(0,0,w,h);
-
-        var transX = w/4;
-        var transY = h/2;
-        var scaleMult = 1;
-          
-        world.bodies.forEach(function(body){
-          if(body.circleType == "circle1" ){
-              if(body.position[0] > 60) scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
-           transX = 20-body.position[0];
-              transY = h/3 + body.position[1];
-              scaleMult = scaleMult < .7 ? .7 : scaleMult;
-          }
-        });
-        // Transform the canvas
-        // Note that we need to flip the y axis since Canvas pixel coordinates
-        // goes from top to bottom, while physics does the opposite.
-        ctx.save();
-        ctx.translate(transX, transY);
-        if(canShoot) ctx.scale(2, -2);
-        else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
-        //Draw the start ramp
-        ctx.beginPath();
-        ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
-        slopeVerts2.forEach(function(coords){
-          ctx.lineTo(coords[0], coords[1]);
-        });
-        ctx.stroke();
-        ctx.closePath();
-        // Draw all bodies
-        levelDrawCallbacks.forEach(function(draw){ draw(); });
-
-        //drawCircle();
-        world.bodies.forEach(function(body){
-          if(body.circleType == "circle1" || body.circleType == "circle2"){
-            drawCircle(body);
-          } else if(body.type == "roof"){
-            drawRoof(body);
-            body.force[1] = -15;
-          }
-        });
-        ctx.save();
-        ctx.scale(1,-1);
-        drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
-        // Restore transform
-        ctx.restore();
-        ctx.restore();
-      }
-
-      function lerp(min, max, val) {
-        return (val-min)/max;
-      }
-
-      function drawText( text, x, y, size, color ) {
-        ctx.font = "bold "+size+"px Monospace";
-        ctx.fillStyle = color;
-        ctx.fillText(text, x, y);
-      }
-
-      // Animation loop
-      function animate(){
-        requestAnimationFrame(animate);
-
-        if(spacedown) {
-           if(!canShoot) { 
-            world.bodies.forEach(function(body){
-              if(body.circleType == "circle1" ){
-               body.force[1] = -100;
-               body.force[0] = 5;
+          //create the main slope
+          planeBody = new p2.Body({mass:0, position:[0,0]});
+          planeBody.fromPolygon(slopeVerts);
+         // planeBody.
+          world.addBody(planeBody);
+          //level ex
+          var level = {
+            houses: [
+              {
+                pos: {x: 65, y: 0},
+                width: 15,
+                height: 14,
+                roofHeight: 10
+              },
+              {
+                pos: {x: 40, y: 0},
+                width: 10,
+                height: 10,
+                roofHeight: 10
+              },
+              {
+                pos: {x: 20, y: 0},
+                width: 5,
+                height: 12,
+                roofHeight: 10
               }
-            });
-          } else if(canFire && shotsLeft > 0){
-            addCircle(5, 4, [5,40], "circle1");
-            canShoot = false;
-            canFire = false;
-            shotsLeft --;
-          }
-        }
-        world.bodies.forEach(function(body){
-            if(body.circleType == "circle1" ){
-             body.lifeTime ++; 
+            ],
+            width: 100,
+            valleyPos: {x: 115, y: -75}
+          };
+          currentLevel = level;
+          //Make a level object
+          generateLevel(slopeVerts2[29], level, world);
+          //spacebar handler
+          window.onkeydown = function(e){
+            if(e.keyCode == 32) {
+              
+              spacedown = true;
             }
-        });
+          };
+          window.onkeyup = function(e){
+            if(e.keyCode == 32) {
+              
+              spacedown = false;
+              if(canShoot)
+                canFire = true;
+            }
+          };
+          world.on("beginContact", function(evt){
+            if(evt.bodyA.circleType == "circle1" || evt.bodyA.circleType == "circle2" ) {
+              var canAdd = true;
+              collisionObjs.forEach(function(body){
+                if(body == evt.bodyA)
+                  canAdd = false;
+              });
 
-         //world.bodies[0].force[0] = 5;
-        // Move physics bodies forward in time
-        world.step(1/30);
-        collisionObjs.forEach(function(obj){
-          if(obj.position[0] > 60 && obj.circleType == "circle1") {
-            world.bodiesToBeRemoved.push(obj);
-            addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
-            addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
-            addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
-            addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
-            addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
-            canShoot = true;
-          } else if(obj.circleType == "circle2" && obj.position[0] < 60){
-            //obj.shapes[0].radius += .1;
-            world.bodiesToBeRemoved.push(obj);
-          } else if( obj.circleType == "circle1" && obj.lifeTime > 300 ) {
-            world.bodiesToBeRemoved.push(obj);
-            canShoot = true;
-          }
-        });
-        collisionObjs = []; 
-        // Render scene
-        render();
-      }
-      //Adds physics objects into the world from a passed in lvl obj
-      //also adds draw callbacks to be drawn by canvas
-      function generateLevel(start, lvl, world) {
-        //Draw callback for the valley, hard coded mostly right now
-        var xOffSet = 10;
-          var yOffSet = 20;
-        levelDrawCallbacks.push(function(){
+              if(canAdd)
+                collisionObjs.push(evt.bodyA);
+            }
+          });
+        }
+        //Draws the circle
+        //This is gonna go away when I make my own circles
+        function drawCircle(circle){
           ctx.beginPath();
-            ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
-          ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
-          ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
-          ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
+          var x = circle.position[0],
+              y = circle.position[1],
+              radius = circle.shapes[0].radius;
+          ctx.arc(x,y,radius,0,2*Math.PI);
+          ctx.stroke();
+        }
+
+        function addCircle(r, m, p, type) {
+          var circleShape = new p2.Circle(r);
+          var circleBody = new p2.Body({ mass:m, position:p });
+          circleShape.material = new p2.Material();
+          circleBody.addShape(circleShape);
+          circleBody.circleType = type;
+          circleBody.lifeTime = 0;
+          world.addBody(circleBody);
+        }
+        //this is a naughty little function that generates verts
+        function generateSlope(x1, x2, y1, y2, verts) {
+          var slope = [];
+          var width = x2 - x1;
+          var periods = .85;
+          var amp = (y1 - y2)/2;
+          var twoPI = 2 * 3.1415926;
+          var frequency = twoPI/width * periods;
+          var y3;
+          
+          slope[0] = [x1,y1];
+          //magic
+          for(var i = 1; i < verts; i++) {
+            var tempX;
+            var tempY;
+            tempX = x1 + (x2 - x1)/verts * i;
+            tempY = (12*(Math.cos(frequency*tempX)) - tempX/2);
+            slope[i] = [tempX, tempY];
+            
+            if(i == verts - 1) {
+              y3 = tempY;
+            }
+          }
+          slope[verts] = [x2, y3 - 20];
+          slope[verts + 1] = [x1, y3 - 20];
+          //done
+          return slope;
+        }
+
+        function drawRoof(roof) {
+          
+          ctx.save();
+          
+          ctx.beginPath();
+          ctx.translate(roof.position[0], roof.position[1]);
+          ctx.rotate(roof.angle);
+          
+          ctx.moveTo(roof.concavePath[0][0], roof.concavePath[0][1]);
+          ctx.lineTo(roof.concavePath[1][0], roof.concavePath[1][1]);
+          ctx.lineTo(roof.concavePath[2][0], roof.concavePath[2][1]);
+          ctx.closePath();
+          ctx.stroke();
+          
+          ctx.restore();
+        }
+
+        function render(){
+          // Clear the canvas
+          ctx.clearRect(0,0,w,h);
+
+          var transX = w/4;
+          var transY = h/2;
+          var scaleMult = 1;
+            
+          world.bodies.forEach(function(body){
+            if(body.circleType == "circle1" ){
+                if(body.position[0] > 60) scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
+             transX = 20-body.position[0];
+                transY = h/3 + body.position[1];
+                scaleMult = scaleMult < .7 ? .7 : scaleMult;
+            }
+          });
+          // Transform the canvas
+          // Note that we need to flip the y axis since Canvas pixel coordinates
+          // goes from top to bottom, while physics does the opposite.
+          ctx.save();
+          ctx.translate(transX, transY);
+          if(canShoot) ctx.scale(2, -2);
+          else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
+          //Draw the start ramp
+          ctx.beginPath();
+          ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
+          slopeVerts2.forEach(function(coords){
+            ctx.lineTo(coords[0], coords[1]);
+          });
           ctx.stroke();
           ctx.closePath();
-        });
-        //right
-        
-        var tri3 = new p2.Body({mass:0, position:[0,0]});
-        tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
-          [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet],
-          [lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet],
-          [lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y],
-          [lvl.valleyPos.x + (xOffSet*3) + lvl.width, lvl.valleyPos.y-(yOffSet*2)],
-          [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
+          // Draw all bodies
+          levelDrawCallbacks.forEach(function(draw){ draw(); });
 
-        world.addBody(tri3);
-        //this is where the house code that I haven't done yet starts
-        lvl.houses.forEach(function(house){
-          
-          //Bottom left corner
-          var xStart = lvl.valleyPos.x + house.pos.x;
-          var yStart = lvl.valleyPos.y - yOffSet;
-          //Make main part of house
-          var base = new p2.Body({mass:0, position:[0,0]});
-          base.fromPolygon([[xStart, yStart], [xStart, yStart + house.height], 
-            [xStart + house.width, yStart + house.height], [xStart + house.width, yStart]]);
-          world.addBody(base);
+          //drawCircle();
+          world.bodies.forEach(function(body){
+            if(body.circleType == "circle1" || body.circleType == "circle2"){
+              drawCircle(body);
+            } else if(body.type == "roof"){
+              drawRoof(body);
+              body.force[1] = -15;
+            }
+          });
+          ctx.save();
+          ctx.scale(1,-1);
+          drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
+          // Restore transform
+          ctx.restore();
+          ctx.restore();
+        }
 
+        function lerp(min, max, val) {
+          return (val-min)/max;
+        }
+
+        function drawText( text, x, y, size, color ) {
+          ctx.font = "bold "+size+"px Monospace";
+          ctx.fillStyle = color;
+          ctx.fillText(text, x, y);
+        }
+
+        // Animation loop
+        function animate(){
+          requestAnimationFrame(animate);
+
+          if(spacedown) {
+             if(!canShoot) { 
+              world.bodies.forEach(function(body){
+                if(body.circleType == "circle1" ){
+                 body.force[1] = -100;
+                 body.force[0] = 5;
+                }
+              });
+            } else if(canFire && shotsLeft > 0){
+              addCircle(5, 4, [6,20], "circle1");
+              canShoot = false;
+              canFire = false;
+              shotsLeft --;
+            }
+          }
+          world.bodies.forEach(function(body){
+              if(body.circleType == "circle1" ){
+               body.lifeTime ++; 
+              }
+          });
+
+           //world.bodies[0].force[0] = 5;
+          // Move physics bodies forward in time
+          world.step(1/30);
+          collisionObjs.forEach(function(obj){
+            if(obj.position[0] > 60 && obj.circleType == "circle1") {
+              world.bodiesToBeRemoved.push(obj);
+              addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
+              addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
+              addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
+              addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
+              addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
+              canShoot = true;
+            } else if(obj.circleType == "circle2" && obj.position[0] < 60){
+              //obj.shapes[0].radius += .1;
+              world.bodiesToBeRemoved.push(obj);
+            } else if( obj.circleType == "circle1" && obj.lifeTime > 300 ) {
+              world.bodiesToBeRemoved.push(obj);
+              canShoot = true;
+            }
+          });
+          collisionObjs = []; 
+          // Render scene
+          render();
+        }
+        //Adds physics objects into the world from a passed in lvl obj
+        //also adds draw callbacks to be drawn by canvas
+        function generateLevel(start, lvl, world) {
+          //Draw callback for the valley, hard coded mostly right now
+          var xOffSet = 10;
+            var yOffSet = 20;
           levelDrawCallbacks.push(function(){
             ctx.beginPath();
-            ctx.moveTo(xStart, yStart);
-            ctx.lineTo(xStart, yStart + house.height);
-            ctx.lineTo(xStart + house.width, yStart + house.height);
-            ctx.lineTo(xStart + house.width, yStart);
+              ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
+            ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
+            ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
+            ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
             ctx.stroke();
             ctx.closePath();
           });
-          //Make Roof
-          var roof = new p2.Body({mass:10, position:[0,0]});
-          roof.fromPolygon([[xStart, yStart + house.height], 
-            [xStart + house.width/2, yStart + house.height + house.roofHeight],
-            [xStart + house.width, yStart + house.height]]);
-          roof.type = "roof";
+          //right
+          
+          var tri3 = new p2.Body({mass:0, position:[0,0]});
+          tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
+            [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet],
+            [lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet],
+            [lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y],
+            [lvl.valleyPos.x + (xOffSet*3) + lvl.width, lvl.valleyPos.y-(yOffSet*2)],
+            [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
 
-          world.addBody(roof);
-        });
-      }
+          world.addBody(tri3);
+          //this is where the house code that I haven't done yet starts
+          lvl.houses.forEach(function(house){
+            
+            //Bottom left corner
+            var xStart = lvl.valleyPos.x + house.pos.x;
+            var yStart = lvl.valleyPos.y - yOffSet;
+            //Make main part of house
+            var base = new p2.Body({mass:0, position:[0,0]});
+            base.fromPolygon([[xStart, yStart], [xStart, yStart + house.height], 
+              [xStart + house.width, yStart + house.height], [xStart + house.width, yStart]]);
+            world.addBody(base);
+
+            levelDrawCallbacks.push(function(){
+              ctx.beginPath();
+              ctx.moveTo(xStart, yStart);
+              ctx.lineTo(xStart, yStart + house.height);
+              ctx.lineTo(xStart + house.width, yStart + house.height);
+              ctx.lineTo(xStart + house.width, yStart);
+              ctx.stroke();
+              ctx.closePath();
+            });
+            //Make Roof
+            var roof = new p2.Body({mass:10, position:[0,0]});
+            roof.fromPolygon([[xStart, yStart + house.height], 
+              [xStart + house.width/2, yStart + house.height + house.roofHeight],
+              [xStart + house.width, yStart + house.height]]);
+            roof.type = "roof";
+
+            world.addBody(roof);
+          });
+        }
+      }());
+
     </script>
 
   </body>
