@@ -104,13 +104,13 @@
           var tempWorld;
 
           // Init p2.js
-          world = new p2.World();
+          tempWorld = new p2.World();
 
           //create the main slope
           planeBody = new p2.Body({mass:0, position:[0,0]});
           planeBody.fromPolygon(slopeVerts);
          // planeBody.
-          world.addBody(planeBody);
+          tempWorld.addBody(planeBody);
           //Make a level object
           generateLevel(slopeVerts2[29], lvl, tempWorld);
 
