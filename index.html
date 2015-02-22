@@ -48,6 +48,7 @@
         var canShoot = true;
         var canFire = true;
         var roofStartPos = [];
+        var buttons = [];
         init();
         animate();
 
@@ -87,6 +88,36 @@
             width: 100,
             valleyPos: {x: 115, y: -75}
           };
+            buttons = [
+                {
+                    id: "play",
+                    x: canvas.width/2 - 50,
+                    y: canvas.height/2 - 20,
+                    w: 100,
+                    h: 40,
+                    fillStyle: "#ddd",
+                    draw: function() {
+                        ctx.save();
+                        ctx.fillStyle = this.fillStyle;
+                        ctx.fillRect(this.x, this.y, this.w, this.h);
+                        ctx.restore();
+                    }
+                },
+                {
+                    id: "level",
+                    x: canvas.width/2 - 50,
+                    y: canvas.height/2 - 50,
+                    w: 100,
+                    h: 100,
+                    fillStyle: "#ddd",
+                    draw: function() {
+                        ctx.save();
+                        ctx.fillStyle = this.fillStyle;
+                        ctx.fillRect(this.x, this.y, this.w, this.h);
+                        ctx.restore();
+                    }
+                }
+            ];
           currentLevel = level;
           var clone = JSON.parse( JSON.stringify( currentLevel ) );
           resetGame(clone);
@@ -155,10 +186,22 @@
         function testButtonPos(mouse) {
             switch(gameState) {
                     case "MAIN_MENU":
-                        //Play
-                        if(mouse.x >= canvas.width/2-50 && mouse.x <= canvas.width/2+50 &&
-                          mouse.y <= canvas.height/2+15 && mouse.y >= canvas.height/2 - 15) {
-                            makeButton(canvas.width/2-50, canvas.height/2 - 15, 100, 100, 30, true);
+                        if(mouse.x >= buttons[0].x && mouse.x <= buttons[0].x+buttons[0].w &&
+                          mouse.y >= buttons[0].y && mouse.y <= buttons[0].y+buttons[0].h) {
+                            buttons[0].fillStyle = "#bfbfbf";
+                        } else {
+                            buttons[0].fillStyle = "#ddd";
+                        }
+                    break;
+                    case "LEVEL_SELECT":
+                        for(var i = 0; i < buttons.length; i++) {
+                          if(buttons[i].id == "level")
+                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
+                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                    buttons[i].fillStyle = "#bfbfbf";
+                            } else {
+                                    buttons[i].fillStyle = "#ddd";
+                            }
                         }
                     break;
             }
@@ -168,27 +211,20 @@
             
             switch(gameState) {
                 case "MAIN_MENU":
-                    if(mouse.x >= canvas.width/2-50 && mouse.x <= canvas.width/2+50 &&
-                          mouse.y <= canvas.height/2+15 && mouse.y >= canvas.height/2 - 15) {
+                    if(mouse.x >= buttons[0].x && mouse.x <= buttons[0].x+buttons[0].w &&
+                          mouse.y >= buttons[0].y && mouse.y <= buttons[0].y+buttons[0].h) {
                             gameState = "LEVEL_SELECT";
                         }
                     break;
                 case "LEVEL_SELECT":
-                    gameState = "GAME_LOOP";
+                    for(var i = 0; i < buttons.length; i++) {
+                          if(buttons[i].id == "level")
+                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
+                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                    gameState = "GAME_LOOP";
+                            }
+                        }
                     break;
-            }
-        }
-        function makeButton(x, y, width, height, hover) {
-            if(hover) {
-                ctx.save();
-                ctx.fillStyle = "black";
-                ctx.fillRect(x, y, width, height);
-                ctx.restore();
-            } else if(!hover) {
-                ctx.save();
-                ctx.fillStyle = "blue";
-                ctx.fillRect(x, y, width, height);
-                ctx.restore();
             }
         }
         
@@ -279,9 +315,11 @@
           switch (gameState) {
                   case "MAIN_MENU" :
                   ctx.save();
-                  makeButton(canvas.width/2-50, canvas.height/2-15, 100, 30, false);
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
+                  for(var i = 0; i < buttons.length; i++) {
+                      if(buttons[i].id == "play") buttons[i].draw();
+                  }
                     drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "red");
                     //drawText("Play", canvas.width/2, canvas.height/2, 34, "red");
                   ctx.restore();
@@ -290,7 +328,10 @@
                   ctx.save();
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    drawText("Level Select", canvas.width/2, canvas.height/2, 34, "red");
+                  for(var i = 0; i < buttons.length; i++) {
+                      if(buttons[i].id == "level") buttons[i].draw();
+                  }
+                    drawText("Level Select", canvas.width/2, 50, 34, "red");
                   ctx.restore();
                   break;
             case "GAME_LOOP" :
@@ -345,11 +386,14 @@
               // Restore transform
               ctx.restore();
               break;
+                  
+                  case "LEVEL_WON":
+                  drawText("Level Won", canvas.width/2, canvas.height/2, 34, "black");
+                  break;
             default:
               console.log("Render oops");
           }
           ctx.restore();
-
         }
 
         function lerp(min, max, val) {
@@ -444,6 +488,8 @@
                 var clone = JSON.parse( JSON.stringify( currentLevel ) );
                 console.log("GG BABY");
                 //resetGame(clone);
+                gameState = "LEVEL_WON";
+                console.log("GG BABY");
               }
               break;
             default:
@@ -476,9 +522,10 @@
               animateGameLoop();
               break;
                   
-                  case "MAIN_MENU" :
-                    
-                    break;
+                  case "MAIN_MENU":
+                  case "LEVEL_SELECT":
+                  case "LEVEL_WON":
+                  break;
                   
             default:
               console.log("oops"); 
