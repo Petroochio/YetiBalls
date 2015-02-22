@@ -22,7 +22,7 @@
         //constants
         var WORLD_SPEED = 30;
         var YETI_POWER = 100;
-        var gameState = "MAIN_MENU";
+        var gameState = "GAME_LOOP";
         var levelState = "IDLE";
         var lastTime = 0;
         /*
@@ -47,6 +47,7 @@
         var shotsLeft = 100;
         var canShoot = true;
         var canFire = true;
+        var roofStartPos = [];
         init();
         animate();
 
@@ -101,7 +102,7 @@
                 canFire = true;
             }
           };
-            canvas.onmousedown = doMouseDown;
+          canvas.onmousedown = doMouseDown;
         }
 
         function initWorld(lvl) {
@@ -377,13 +378,14 @@
               }
               collisionObjs.forEach(function(obj){
                 if(obj.circleType == "circle2" && obj.position[0] < 60){
-                    //obj.shapes[0].radius += .1;
+                  //obj.shapes[0].radius += .1;
                   world.bodiesToBeRemoved.push(obj);
                 }
               });
               collisionObjs = [];
               if(testForRoundEnd())
-                gameState = "LEVEL_WON";
+                //gameState = "LEVEL_WON";
+                console.log("GG BABY");
               break;
             default:
               console.log("LEVEL");
@@ -392,7 +394,18 @@
 
         //Tests for the end of a round
         function testForRoundEnd() {
+          var complete = true;
 
+          world.bodies.forEach(function(body){
+            if(body.type == "roof"){
+              var distX = body.position[0] - roofStartPos[body.id][0];
+              var distY = body.position[1] - roofStartPos[body.id][1];
+              
+              if(distX < 5 && distX > -5)
+                complete = false;
+            }
+          });
+          return complete;
         }
 
         // Animation loop
@@ -438,9 +451,9 @@
             [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
 
           world.addBody(tri3);
+          var iterator = 0;
           //this is where the house code that I haven't done yet starts
           lvl.houses.forEach(function(house){
-            
             //Bottom left corner
             var xStart = lvl.valleyPos.x + house.pos.x;
             var yStart = lvl.valleyPos.y - yOffSet;
@@ -465,8 +478,11 @@
               [xStart + house.width/2, yStart + house.height + house.roofHeight],
               [xStart + house.width, yStart + house.height]]);
             roof.type = "roof";
+            roof.id = iterator;
 
+            roofStartPos[iterator] = [roof.position[0], roof.position[1]];
             world.addBody(roof);
+            iterator ++;
           });
         }
       }());
