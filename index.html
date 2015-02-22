@@ -22,7 +22,7 @@
         //constants
         var WORLD_SPEED = 30;
         var YETI_POWER = 100;
-        var gameState = "GAME_LOOP";
+        var gameState = "MAIN_MENU";
         var levelState = "IDLE";
         var lastTime = 0;
         /*
@@ -102,7 +102,8 @@
                 canFire = true;
             }
           };
-          canvas.onmousedown = doMouseDown;
+            canvas.onmousedown = doMouseDown;
+            canvas.onmousemove = doMouseMove;
         }
 
         function initWorld(lvl) {
@@ -133,13 +134,48 @@
           });
           return tempWorld;
         }
+        
+        function doMouseMove(e) {
+            var mouse = getMouse(e);
+            testButtonPos(mouse);
+        }
+        function testButtonPos(mouse) {
+            switch(gameState) {
+                    case "MAIN_MENU":
+                        //Play
+                        if(mouse.x >= canvas.width/2-50 && mouse.x <= canvas.width/2+50 &&
+                          mouse.y <= canvas.height/2+15 && mouse.y >= canvas.height/2 - 15) {
+                            makeButton(canvas.width/2-50, canvas.height/2 - 15, 100, 100, 30, true);
+                        }
+                    break;
+            }
+        }
         function doMouseDown(e) {
             var mouse = getMouse(e);
             
             switch(gameState) {
                 case "MAIN_MENU":
-                    //gameState = "LEVEL_SELECT";
+                    if(mouse.x >= canvas.width/2-50 && mouse.x <= canvas.width/2+50 &&
+                          mouse.y <= canvas.height/2+15 && mouse.y >= canvas.height/2 - 15) {
+                            gameState = "LEVEL_SELECT";
+                        }
                     break;
+                case "LEVEL_SELECT":
+                    gameState = "GAME_LOOP";
+                    break;
+            }
+        }
+        function makeButton(x, y, width, height, hover) {
+            if(hover) {
+                ctx.save();
+                ctx.fillStyle = "black";
+                ctx.fillRect(x, y, width, height);
+                ctx.restore();
+            } else if(!hover) {
+                ctx.save();
+                ctx.fillStyle = "blue";
+                ctx.fillRect(x, y, width, height);
+                ctx.restore();
             }
         }
         
@@ -230,13 +266,20 @@
           switch (gameState) {
                   case "MAIN_MENU" :
                   ctx.save();
+                  makeButton(canvas.width/2-50, canvas.height/2-15, 100, 30, false);
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                  
                     drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "red");
-                    drawText("Play", canvas.width/2, canvas.height/2, 34, "red");
+                    //drawText("Play", canvas.width/2, canvas.height/2, 34, "red");
                   ctx.restore();
                     break;
+                  case "LEVEL_SELECT" :
+                  ctx.save();
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    drawText("Level Select", canvas.width/2, canvas.height/2, 34, "red");
+                  ctx.restore();
+                  break;
             case "GAME_LOOP" :
               var transX = w/4;
               var transY = h/2;
@@ -419,6 +462,7 @@
                   case "MAIN_MENU" :
                     
                     break;
+                  
             default:
               console.log("oops"); 
           }
