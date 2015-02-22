@@ -13,7 +13,27 @@
     <script>
     "use strict";
     (function(){
-        var canvas, ctx, w, h,
+        //constants
+        var WORLD_SPEED = 30;
+        var YETI_POWER = 100;
+        var gameState = "GAME_LOOP";
+        var levelState = "BALL_ACTIVE";
+        /*
+          Game States:
+          - MAIN_MENU
+          - LEVEL_SELECT
+          - GAME_LOOP
+            - LOADING
+            - IDLE
+            - BALL_ACTIVE
+          - LEVEL_LOST
+          - LEVEL_WON
+        */
+        //pretty transitions
+        var transXplus = 2;
+        var transYplus = 2;
+
+        var canvas, ctx, w, h, lastTime,
             world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
         var levelDrawCallbacks = [];
         var collisionObjs = [];
@@ -173,58 +193,66 @@
         function render(){
           // Clear the canvas
           ctx.clearRect(0,0,w,h);
-
-          var transX = w/4;
-          var transY = h/2;
-          var scaleMult = 1;
-            
-          world.bodies.forEach(function(body){
-            if(body.circleType == "circle1" ){
-                if(body.position[0] > 60) scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
-             transX = 20-body.position[0];
-                transY = h/3 + body.position[1];
-                scaleMult = scaleMult < .7 ? .7 : scaleMult;
-            }
-          });
-          // Transform the canvas
-          // Note that we need to flip the y axis since Canvas pixel coordinates
-          // goes from top to bottom, while physics does the opposite.
           ctx.save();
-          ctx.translate(transX, transY);
-          if(canShoot) ctx.scale(2, -2);
-          else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
-          //Draw the start ramp
-          ctx.beginPath();
-          ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
-          slopeVerts2.forEach(function(coords){
-            ctx.lineTo(coords[0], coords[1]);
-          });
-          ctx.stroke();
-          ctx.closePath();
-          // Draw all bodies
-          levelDrawCallbacks.forEach(function(draw){ draw(); });
 
-          //drawCircle();
-          world.bodies.forEach(function(body){
-            if(body.circleType == "circle2" ){
-              drawCircle(body);
-            }else if( body.circleType == "circle1"){
+          switch (gameState) {
+            case "GAME_LOOP" :
+              var transX = w/4;
+              var transY = h/2;
+              var scaleMult = 1;
+                
+              world.bodies.forEach(function(body){
+                if(body.circleType == "circle1" ){
+                    if(body.position[0] > 60) 
+                      scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
+                    transX = 20-body.position[0];
+                    transY = h/3 + body.position[1];
+                    scaleMult = scaleMult < .7 ? .7 : scaleMult;
+                }
+              });
+              // Transform the canvas
+              // Note that we need to flip the y axis since Canvas pixel coordinates
+              // goes from top to bottom, while physics does the opposite.
+              ctx.translate(transX, transY);
+              if(canShoot) ctx.scale(2, -2);
+              else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
+              //Draw the start ramp
+              ctx.beginPath();
+              ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
+              slopeVerts2.forEach(function(coords){
+                ctx.lineTo(coords[0], coords[1]);
+              });
+              ctx.stroke();
+              ctx.closePath();
+              // Draw all bodies
+              levelDrawCallbacks.forEach(function(draw){ draw(); });
 
-              if(spacedown)
-                drawCircle(body, 'blue');
-              else
-                drawCircle(body);
-            } else if(body.type == "roof"){
-              drawRoof(body);
-              body.force[1] = -15;
-            }
-          });
-          ctx.save();
-          ctx.scale(1,-1);
-          drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
-          // Restore transform
+              //drawCircle();
+              world.bodies.forEach(function(body){
+                if(body.circleType == "circle2" ){
+                  drawCircle(body);
+                }else if( body.circleType == "circle1"){
+
+                  if(spacedown)
+                    drawCircle(body, 'blue');
+                  else
+                    drawCircle(body);
+                } else if(body.type == "roof"){
+                  drawRoof(body);
+                  body.force[1] = -15;
+                }
+              });
+              ctx.save();
+              ctx.scale(1,-1);
+              drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
+              // Restore transform
+              ctx.restore();
+              break;
+            default:
+              console.log("Render oops");
+          }
           ctx.restore();
-          ctx.restore();
+
         }
 
         function lerp(min, max, val) {
@@ -237,57 +265,84 @@
           ctx.fillText(text, x, y);
         }
 
+        function calculateDeltaTime() {
+          var now, fps;
+          now = (+ new Date);
+          fps = 1000 / (now - lastTime);
+          fps = clamp(fps, 12, 20);
+          lastTime = now;
+          return 1/fps;
+        }
+
+        function clamp( val, min, max ) {
+          return Math.max(min, Math.max(max, val));
+        }
+
         // Animation loop
         function animate(){
           requestAnimationFrame(animate);
+          switch (gameState) {
+            case "GAME_LOOP" :
+              switch (levelState) {
+                case "BALL_ACTIVE" :
+                  if(spacedown) {
+                     if(!canShoot) { 
+                      world.bodies.forEach(function(body){
+                        if(body.circleType == "circle1" ){
+                         body.force[1] = -YETI_POWER;
+                         body.force[0] = 5;
+                        }
+                      });
+                    } else if(canFire && shotsLeft > 0){
+                      addCircle(5, 4, [6,20], "circle1");
+                      canShoot = false;
+                      canFire = false;
+                      shotsLeft --;
+                    }
+                  }
+                  world.bodies.forEach(function(body){
+                      if(body.circleType == "circle1" ){
+                       body.lifeTime ++; 
+                       if( body.position[1] < -150) {
+                        world.bodiesToBeRemoved.push(body);
+                        canShoot = true;  
+                       }
+                      }
+                  });
 
-          if(spacedown) {
-             if(!canShoot) { 
-              world.bodies.forEach(function(body){
-                if(body.circleType == "circle1" ){
-                 body.force[1] = -120;
-                 body.force[0] = 5;
-                }
-              });
-            } else if(canFire && shotsLeft > 0){
-              addCircle(5, 4, [6,20], "circle1");
-              canShoot = false;
-              canFire = false;
-              shotsLeft --;
-            }
-          }
-          world.bodies.forEach(function(body){
-              if(body.circleType == "circle1" ){
-               body.lifeTime ++; 
-               if( body.position[1] < -150) {
-                world.bodiesToBeRemoved.push(body);
-                canShoot = true;  
-               }
+                   //world.bodies[0].force[0] = 5;
+                  // Move physics bodies forward in time
+                  var dt = calculateDeltaTime();
+                  var et = 1/WORLD_SPEED;
+                  world.step(et);
+                  collisionObjs.forEach(function(obj){
+                    
+                    if(obj.position[0] > 60 && obj.circleType == "circle1") {
+                      world.bodiesToBeRemoved.push(obj);
+                      addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
+                      addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
+                      addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
+                      addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
+                      addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
+                      canShoot = true;
+                    } else if(obj.circleType == "circle2" && obj.position[0] < 60){
+                      //obj.shapes[0].radius += .1;
+                      world.bodiesToBeRemoved.push(obj);
+                    } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
+                      world.bodiesToBeRemoved.push(obj);
+                      canShoot = true;
+                    }
+                  });
+                  collisionObjs = [];
+                  break;
+                default:
+                  console.log("LEVEL");
               }
-          });
+              break;
 
-           //world.bodies[0].force[0] = 5;
-          // Move physics bodies forward in time
-          world.step(1/20);
-          collisionObjs.forEach(function(obj){
-            
-            if(obj.position[0] > 60 && obj.circleType == "circle1") {
-              world.bodiesToBeRemoved.push(obj);
-              addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
-              addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
-              addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
-              addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
-              addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
-              canShoot = true;
-            } else if(obj.circleType == "circle2" && obj.position[0] < 60){
-              //obj.shapes[0].radius += .1;
-              world.bodiesToBeRemoved.push(obj);
-            } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
-              world.bodiesToBeRemoved.push(obj);
-              canShoot = true;
-            }
-          });
-          collisionObjs = []; 
+            default:
+              console.log("oops"); 
+          }
           // Render scene
           render();
         }
