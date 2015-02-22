@@ -88,7 +88,8 @@
             valleyPos: {x: 115, y: -75}
           };
           currentLevel = level;
-          world = initWorld(level);
+          var clone = JSON.parse( JSON.stringify( currentLevel ) );
+          resetGame(clone);
           //spacebar handler
           window.onkeydown = function(e){
             if(e.keyCode == 32) {
@@ -106,6 +107,18 @@
             canvas.onmousemove = doMouseMove;
         }
 
+        function resetGame(lvl) {
+          
+          levelDrawCallbacks = [];
+          collisionObjs = [];
+          shotsLeft = 100;
+          canShoot = true;
+          canFire = true;
+          roofStartPos = [];
+
+          world = initWorld(lvl);
+        }
+
         function initWorld(lvl) {
           var tempWorld;
 
@@ -113,10 +126,10 @@
           tempWorld = new p2.World();
 
           //create the main slope
-          planeBody = new p2.Body({mass:0, position:[0,0]});
-          planeBody.fromPolygon(slopeVerts);
+          var tempplaneBody = new p2.Body({mass:0, position:[0,0]});
+          tempplaneBody.fromPolygon(slopeVerts);
          // planeBody.
-          tempWorld.addBody(planeBody);
+          tempWorld.addBody(tempplaneBody);
           //Make a level object
           generateLevel(slopeVerts2[29], lvl, tempWorld);
 
@@ -426,9 +439,12 @@
                 }
               });
               collisionObjs = [];
-              if(testForRoundEnd())
-                //gameState = "LEVEL_WON";
+              if(testForRoundEnd()) {
+
+                var clone = JSON.parse( JSON.stringify( currentLevel ) );
                 console.log("GG BABY");
+                //resetGame(clone);
+              }
               break;
             default:
               console.log("LEVEL");
@@ -441,6 +457,7 @@
 
           world.bodies.forEach(function(body){
             if(body.type == "roof"){
+              
               var distX = body.position[0] - roofStartPos[body.id][0];
               var distY = body.position[1] - roofStartPos[body.id][1];
               
