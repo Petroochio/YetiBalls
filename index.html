@@ -278,66 +278,70 @@
           return Math.max(min, Math.max(max, val));
         }
 
+        function animateGameLoop() {
+          // Move physics bodies forward in time
+          var dt = calculateDeltaTime();
+          var et = 1/WORLD_SPEED;
+          world.step(et);
+          switch (levelState) {
+            case "BALL_ACTIVE" :
+              if(spacedown) {
+                 if(!canShoot) { 
+                  world.bodies.forEach(function(body){
+                    if(body.circleType == "circle1" ){
+                     body.force[1] = -YETI_POWER;
+                     body.force[0] = 5;
+                    }
+                  });
+                } else if(canFire && shotsLeft > 0){
+                  addCircle(5, 4, [6,20], "circle1");
+                  canShoot = false;
+                  canFire = false;
+                  shotsLeft --;
+                }
+              }
+              world.bodies.forEach(function(body){
+                  if(body.circleType == "circle1" ){
+                   body.lifeTime ++; 
+                   if( body.position[1] < -150) {
+                    world.bodiesToBeRemoved.push(body);
+                    canShoot = true;  
+                   }
+                  }
+              });
+
+               //world.bodies[0].force[0] = 5;
+              
+              collisionObjs.forEach(function(obj){
+                if(obj.position[0] > 60 && obj.circleType == "circle1") {
+                  world.bodiesToBeRemoved.push(obj);
+                  addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
+                  addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
+                  addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
+                  addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
+                  addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
+                  canShoot = true;
+                } else if(obj.circleType == "circle2" && obj.position[0] < 60){
+                  //obj.shapes[0].radius += .1;
+                  world.bodiesToBeRemoved.push(obj);
+                } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
+                  world.bodiesToBeRemoved.push(obj);
+                  canShoot = true;
+                }
+              });
+              collisionObjs = [];
+              break;
+            default:
+              console.log("LEVEL");
+          }
+        }
+
         // Animation loop
         function animate(){
           requestAnimationFrame(animate);
           switch (gameState) {
             case "GAME_LOOP" :
-              switch (levelState) {
-                case "BALL_ACTIVE" :
-                  if(spacedown) {
-                     if(!canShoot) { 
-                      world.bodies.forEach(function(body){
-                        if(body.circleType == "circle1" ){
-                         body.force[1] = -YETI_POWER;
-                         body.force[0] = 5;
-                        }
-                      });
-                    } else if(canFire && shotsLeft > 0){
-                      addCircle(5, 4, [6,20], "circle1");
-                      canShoot = false;
-                      canFire = false;
-                      shotsLeft --;
-                    }
-                  }
-                  world.bodies.forEach(function(body){
-                      if(body.circleType == "circle1" ){
-                       body.lifeTime ++; 
-                       if( body.position[1] < -150) {
-                        world.bodiesToBeRemoved.push(body);
-                        canShoot = true;  
-                       }
-                      }
-                  });
-
-                   //world.bodies[0].force[0] = 5;
-                  // Move physics bodies forward in time
-                  var dt = calculateDeltaTime();
-                  var et = 1/WORLD_SPEED;
-                  world.step(et);
-                  collisionObjs.forEach(function(obj){
-                    
-                    if(obj.position[0] > 60 && obj.circleType == "circle1") {
-                      world.bodiesToBeRemoved.push(obj);
-                      addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
-                      addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
-                      addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
-                      addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
-                      addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
-                      canShoot = true;
-                    } else if(obj.circleType == "circle2" && obj.position[0] < 60){
-                      //obj.shapes[0].radius += .1;
-                      world.bodiesToBeRemoved.push(obj);
-                    } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
-                      world.bodiesToBeRemoved.push(obj);
-                      canShoot = true;
-                    }
-                  });
-                  collisionObjs = [];
-                  break;
-                default:
-                  console.log("LEVEL");
-              }
+              animateGameLoop();
               break;
 
             default:
