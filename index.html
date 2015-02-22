@@ -4,6 +4,12 @@
     <title>Yeti Balls</title>
     <meta charset="utf-8">
     <script src="p2.js-master/build/p2.js"></script>
+      <style>
+      canvas{
+          border: 1px solid black;
+      }
+      </style>
+      
   </head>
   <body>
 
@@ -16,7 +22,7 @@
         //constants
         var WORLD_SPEED = 30;
         var YETI_POWER = 100;
-        var gameState = "GAME_LOOP";
+        var gameState = "MAIN_MENU";
         var levelState = "IDLE";
         var lastTime = 0;
         /*
@@ -85,19 +91,17 @@
           //spacebar handler
           window.onkeydown = function(e){
             if(e.keyCode == 32) {
-              
               spacedown = true;
             }
           };
           window.onkeyup = function(e){
             if(e.keyCode == 32) {
-              
               spacedown = false;
               if(canShoot)
                 canFire = true;
             }
           };
-          
+            canvas.onmousedown = doMouseDown;
         }
 
         function initWorld(lvl) {
@@ -128,6 +132,23 @@
           });
           return tempWorld;
         }
+        function doMouseDown(e) {
+            var mouse = getMouse(e);
+            
+            switch(gameState) {
+                case "MAIN_MENU":
+                    //gameState = "LEVEL_SELECT";
+                    break;
+            }
+        }
+        
+        function getMouse(mouse) {
+            var x = mouse.pageX - mouse.target.offsetLeft;
+            var y = mouse.pageY - mouse.target.offsetTop;
+            return {x: x, y: y};
+        }
+        
+        
         //Draws the circle
         //This is gonna go away when I make my own circles
         function drawCircle(circle, fill){
@@ -206,6 +227,15 @@
           ctx.save();
 
           switch (gameState) {
+                  case "MAIN_MENU" :
+                  ctx.save();
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                  
+                    drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "red");
+                    drawText("Play", canvas.width/2, canvas.height/2, 34, "red");
+                  ctx.restore();
+                    break;
             case "GAME_LOOP" :
               var transX = w/4;
               var transY = h/2;
@@ -372,6 +402,10 @@
             case "GAME_LOOP" :
               animateGameLoop();
               break;
+                  
+                  case "MAIN_MENU" :
+                    
+                    break;
             default:
               console.log("oops"); 
           }
