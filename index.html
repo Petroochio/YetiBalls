@@ -256,6 +256,8 @@
                                 mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
                                     gameState = "GAME_LOOP";
                                     buttons = [];
+                                    var clone = JSON.parse( JSON.stringify(currentLevel));
+                                    resetGame(clone);
                             }
                         }
                     break;
@@ -274,17 +276,20 @@
         //This is gonna go away when I make my own circles
         function drawCircle(circle, fill){
           var r = circle.shapes[0].radius;
-          ctx.save();   
-          ctx.translate(circle.position[0], circle.position[1]);
-          ctx.rotate(circle.angle);
-          ctx.drawImage(ballImg, -1*r, -1*r, r*2, r*2);
-          ctx.restore();
+          
           ctx.beginPath();
           var x = circle.position[0],
               y = circle.position[1],
               radius = circle.shapes[0].radius;
           ctx.arc(x,y,radius,0,2*Math.PI);
           ctx.stroke();
+
+          ctx.save();   
+          ctx.translate(circle.position[0], circle.position[1]);
+          ctx.rotate(circle.angle);
+          ctx.drawImage(ballImg, -1*r, -1*r, r*2, r*2);
+          ctx.restore();
+          
           /*if(fill){
             ctx.save();
             ctx.fillStyle = fill;
