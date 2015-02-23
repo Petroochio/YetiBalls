@@ -40,7 +40,7 @@
         var transXplus = 2;
         var transYplus = 2;
 
-        var canvas, ctx, w, h, lastTime,
+        var canvas, ctx, w, h, lastTime, ballImg,
             world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
         var levelDrawCallbacks = [];
         var collisionObjs = [];
@@ -53,7 +53,9 @@
         animate();
 
         function init(){
-          
+          ballImg = new Image();
+          ballImg.src = "assets/snowball.png";
+
           // Init canvas
           canvas = document.getElementById("myCanvas");
           w = canvas.width;
@@ -243,18 +245,24 @@
         //Draws the circle
         //This is gonna go away when I make my own circles
         function drawCircle(circle, fill){
+          var r = circle.shapes[0].radius;
+          ctx.save();   
+          ctx.translate(circle.position[0], circle.position[1]);
+          ctx.rotate(circle.angle);
+          ctx.drawImage(ballImg, -1*r, -1*r, r*2, r*2);
+          ctx.restore();
           ctx.beginPath();
           var x = circle.position[0],
               y = circle.position[1],
               radius = circle.shapes[0].radius;
           ctx.arc(x,y,radius,0,2*Math.PI);
           ctx.stroke();
-          if(fill){
+          /*if(fill){
             ctx.save();
             ctx.fillStyle = fill;
             ctx.fill();
             ctx.restore();
-          }
+          }*/
         }
 
         function addCircle(r, m, p, type) {
@@ -391,7 +399,6 @@
               // Restore transform
               ctx.restore();
               break;
-                  
                   case "LEVEL_WON":
                   drawText("Level Won", canvas.width/2, canvas.height/2, 34, "black");
                   break;
@@ -444,7 +451,8 @@
                    body.lifeTime ++; 
                    if( body.position[1] < -150) {
                     world.bodiesToBeRemoved.push(body);
-                    canShoot = true;  
+                    canShoot = true;
+                    levelState = "IDLE";  
                    }
                   }
               });
