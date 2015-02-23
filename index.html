@@ -36,7 +36,7 @@
             - LEVEL_LOST
             - LEVEL_WON
             
-            Button Types:
+            Button IDs:
             - play
             - replay
             - next
@@ -56,6 +56,7 @@
             var canFire = true;
             var roofStartPos = [];
             var buttons = [];
+            var levels = [];
             init();
             animate();
 
@@ -70,36 +71,56 @@
 
                 ctx = canvas.getContext("2d");
                 ctx.lineWidth = .5;
-
-                //level ex
-                var level = {
-                    houses: [
-                        {
-                            pos: {x: 65, y: 0},
-                            width: 15,
-                            height: 14,
-                            roofHeight: 10
-                        },
-                        {
-                            pos: {x: 40, y: 0},
-                            width: 10,
-                            height: 10,
-                            roofHeight: 10
-                        },
-                        {
-                            pos: {x: 20, y: 0},
-                            width: 5,
-                            height: 12,
-                            roofHeight: 10
-                        }
-                    ],
-                    width: 100,
-                    valleyPos: {x: 115, y: -75}
-                };
+                
+                //levels
+                levels = [
+                    {
+                        houses: [
+                            {
+                                pos: {x: 40, y: 0},
+                                width: 10,
+                                height: 10,
+                                roofHeight: 10
+                            },
+                            {
+                                pos: {x: 20, y: 0},
+                                width: 5,
+                                height: 12,
+                                roofHeight: 10
+                            }
+                        ],
+                        width: 100,
+                        valleyPos: {x: 115, y: -75}
+                    },
+                    {
+                        houses: [
+                            {
+                                pos: {x: 65, y: 0},
+                                width: 15,
+                                height: 14,
+                                roofHeight: 10
+                            },
+                            {
+                                pos: {x: 40, y: 0},
+                                width: 10,
+                                height: 10,
+                                roofHeight: 10
+                            },
+                            {
+                                pos: {x: 20, y: 0},
+                                width: 5,
+                                height: 12,
+                                roofHeight: 10
+                            }
+                        ],
+                        width: 100,
+                        valleyPos: {x: 115, y: -75}
+                    }
+                ];
 
                 makeButton(canvas.width/2 - 50, canvas.height/2 - 20, 100, 40, "play", true, "Play", "white");
-                currentLevel = level;
-                //var clone = JSON.parse( JSON.stringify( currentLevel ) );
+                currentLevel = 0;
+                //var clone = JSON.parse( JSON.stringify( levels[currentLevel] ) );
                 //resetGame(clone);
                 //spacebar handler
                 window.onkeydown = function(e){
@@ -214,7 +235,8 @@
                             mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
                                 gameState = "LEVEL_SELECT";
                                 buttons = [];
-                                makeButton(canvas.width/2-50, canvas.height/2-50, 100, 100, 1, true, "1", "white");
+                                makeButton(canvas.width/2-125, canvas.height/2-50, 100, 100, 0, true, "1", "white");
+                                makeButton(canvas.width/2+25, canvas.height/2-50, 100, 100, 1, true, "2", "white");
                             }
                         }
                         break;
@@ -222,11 +244,13 @@
                         for(var i = 0; i < buttons.length; i++) {
                             if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
                             mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                currentLevel = parseInt(buttons[i].id);
+                                
                                 gameState = "GAME_LOOP";
                                 buttons = [];
-                                //find correct pos
-                                //makeButton(0, 0, 50, 50, "menu", true, "lvl", "white");
-                                var clone = JSON.parse( JSON.stringify(currentLevel));
+                                    //find correct pos for restart button
+                                    //makeButton(0, 0, 50, 50, "menu", true, "lvl", "white");
+                                var clone = JSON.parse( JSON.stringify(levels[currentLevel]));
                                 resetGame(clone);
                             }
                         }
@@ -238,12 +262,21 @@
                                 if(buttons[i].id == "menu") {
                                     gameState = "LEVEL_SELECT";
                                     buttons = [];
-                                    makeButton(canvas.width/2-50, canvas.height/2-50, 100, 100, 1, true, "1", "white");
+                                    makeButton(canvas.width/2-125, canvas.height/2-50, 100, 100, 0, true, "1", "white");
+                                    makeButton(canvas.width/2+25, canvas.height/2-50, 100, 100, 1, true, "2", "white");
                                 } else if(buttons[i].id == "replay") {
                                     gameState = "GAME_LOOP";
                                     buttons = [];
-                                    var clone = JSON.parse( JSON.stringify(currentLevel));
+                                    var clone = JSON.parse( JSON.stringify(levels[currentLevel]));
                                     resetGame(clone);
+                                }else if(buttons[i].id == "next") {
+                                    if(buttons[i].active) {
+                                        gameState = "GAME_LOOP";
+                                        buttons = [];
+                                        currentLevel++;
+                                        var clone = JSON.parse( JSON.stringify(levels[currentLevel]));
+                                        resetGame(clone);
+                                    }
                                 }
                                 //add other button functions
                             }
@@ -343,7 +376,7 @@
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
-                        drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "red");
+                        drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "black");
                         ctx.restore();
                         break;
                     case "LEVEL_SELECT" :
@@ -351,7 +384,7 @@
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
-                        drawText("Level Select", canvas.width/2, 50, 34, "red");
+                        drawText("Level Select", canvas.width/2, 50, 34, "black");
                         ctx.restore();
                         break;
                     case "GAME_LOOP" :
@@ -362,7 +395,7 @@
                         world.bodies.forEach(function(body){
                             if(body.circleType == "circle1" ){
                                 if(body.position[0] > 60) 
-                                    scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
+                                    scaleMult = 1 - lerp(60, 60 + levels[currentLevel].width, body.position[0]);
                                 transX = 20-body.position[0];
                                 transY = h/3 + body.position[1];
                                 scaleMult = scaleMult < .7 ? .7 : scaleMult;
@@ -402,7 +435,8 @@
                         });
                         ctx.save();
                         ctx.scale(1,-1);
-                        drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
+                        drawText("Balls: " + shotsLeft, 10, -25, 10, "#ddd");
+                        drawText("Press Space!", 10, -15, 10, "#ddd");
                         // Restore transform
                         ctx.restore();
                         break;
@@ -512,7 +546,10 @@
                             gameState = "LEVEL_WON";
                             buttons = [];
                             makeButton(canvas.width/2-280, canvas.height/2+25, 270, 50, "menu", true, "Level Select", "white");
-                            makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white");
+                            if(currentLevel < levels.length-1)
+                                makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", true, "Next Level", "white");
+                            else
+                                makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white");
                             makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white");
                         }
                         break;
