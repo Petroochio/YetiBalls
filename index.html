@@ -1,648 +1,624 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Yeti Balls</title>
-    <meta charset="utf-8">
-    <script src="p2.js-master/build/p2.js"></script>
-      <style>
-      canvas{
-          border: 1px solid black;
-      }
-      </style>
-      
-  </head>
-  <body>
+    <head>
+        <title>Yeti Balls</title>
+        <meta charset="utf-8">
+        <script src="p2.js-master/build/p2.js"></script>
+        <style>
+        canvas{
+        border: 1px solid black;
+        }
+        </style>
 
-    <!-- The canvas, where we draw stuff -->
-    <canvas width="600" height="400" id="myCanvas"></canvas>
+    </head>
+    <body>
 
-    <script>
-    "use strict";
-    (function(){
-        //constants
-        var WORLD_SPEED = 30;
-        var YETI_POWER = 100;
-        var gameState = "MAIN_MENU";
-        var levelState = "IDLE";
-        var lastTime = 0;
-        /*
-          Game States:
-          - MAIN_MENU
-          - LEVEL_SELECT
-          - GAME_LOOP
-            - LOADING
-            - IDLE
-            - BALL_ACTIVE
-          - LEVEL_LOST
-          - LEVEL_WON
-        */
-        //pretty transitions
-        var transXplus = 2;
-        var transYplus = 2;
+        <!-- The canvas, where we draw stuff -->
+        <canvas width="600" height="400" id="myCanvas"></canvas>
 
-        var canvas, ctx, w, h, lastTime, ballImg,
-            world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
-        var levelDrawCallbacks = [];
-        var collisionObjs = [];
-        var shotsLeft = 100;
-        var canShoot = true;
-        var canFire = true;
-        var roofStartPos = [];
-        var buttons = [];
-        init();
-        animate();
-
-        function init(){
-          ballImg = new Image();
-          ballImg.src = "assets/snowball.png";
-
-          // Init canvas
-          canvas = document.getElementById("myCanvas");
-          w = canvas.width;
-          h = canvas.height;
-
-          ctx = canvas.getContext("2d");
-          ctx.lineWidth = .5;
-          
-          //level ex
-          var level = {
-            houses: [
-              {
-                pos: {x: 65, y: 0},
-                width: 15,
-                height: 14,
-                roofHeight: 10
-              },
-              {
-                pos: {x: 40, y: 0},
-                width: 10,
-                height: 10,
-                roofHeight: 10
-              },
-              {
-                pos: {x: 20, y: 0},
-                width: 5,
-                height: 12,
-                roofHeight: 10
-              }
-            ],
-            width: 100,
-            valleyPos: {x: 115, y: -75}
-          };
-            /*buttons = [
-                {
-                    id: "play",
-                    x: canvas.width/2 - 50,
-                    y: canvas.height/2 - 20,
-                    w: 100,
-                    h: 40,
-                    fillStyle: "#ddd",
-                    draw: function() {
-                        ctx.save();
-                        ctx.fillStyle = this.fillStyle;
-                        ctx.fillRect(this.x, this.y, this.w, this.h);
-                        drawText("Play", this.x+50, this.y+20, 34, "white");
-                        ctx.restore();
-                    }
-                },
-                {
-                    id: "level",
-                    x: canvas.width/2 - 50,
-                    y: canvas.height/2 - 50,
-                    w: 100,
-                    h: 100,
-                    fillStyle: "#ddd",
-                    draw: function() {
-                        ctx.save();
-                        ctx.fillStyle = this.fillStyle;
-                        ctx.fillRect(this.x, this.y, this.w, this.h);
-                        ctx.restore();
-                    }
-                }
-            ];*/
+        <script>
+        "use strict";
+        (function(){
+            //constants
+            var WORLD_SPEED = 30;
+            var YETI_POWER = 100;
+            var gameState = "MAIN_MENU";
+            var levelState = "IDLE";
+            var lastTime = 0;
+            /*
+            Game States:
+            - MAIN_MENU
+            - LEVEL_SELECT
+            - GAME_LOOP
+                - LOADING
+                - IDLE
+                - BALL_ACTIVE
+            - LEVEL_LOST
+            - LEVEL_WON
             
-                  makeButton(canvas.width/2 - 50, canvas.height/2 - 20, 100, 40, "play", "Play", "white");
-          currentLevel = level;
-          //var clone = JSON.parse( JSON.stringify( currentLevel ) );
-          //resetGame(clone);
-          //spacebar handler
-          window.onkeydown = function(e){
-            if(e.keyCode == 32) {
-              spacedown = true;
+            Button Types:
+            - play
+            - replay
+            - next
+            - menu
+            - int
+            */
+            //pretty transitions
+            var transXplus = 2;
+            var transYplus = 2;
+
+            var canvas, ctx, w, h, lastTime, ballImg,
+            world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
+            var levelDrawCallbacks = [];
+            var collisionObjs = [];
+            var shotsLeft = 100;
+            var canShoot = true;
+            var canFire = true;
+            var roofStartPos = [];
+            var buttons = [];
+            init();
+            animate();
+
+            function init(){
+                ballImg = new Image();
+                ballImg.src = "assets/snowball.png";
+
+                // Init canvas
+                canvas = document.getElementById("myCanvas");
+                w = canvas.width;
+                h = canvas.height;
+
+                ctx = canvas.getContext("2d");
+                ctx.lineWidth = .5;
+
+                //level ex
+                var level = {
+                    houses: [
+                        {
+                            pos: {x: 65, y: 0},
+                            width: 15,
+                            height: 14,
+                            roofHeight: 10
+                        },
+                        {
+                            pos: {x: 40, y: 0},
+                            width: 10,
+                            height: 10,
+                            roofHeight: 10
+                        },
+                        {
+                            pos: {x: 20, y: 0},
+                            width: 5,
+                            height: 12,
+                            roofHeight: 10
+                        }
+                    ],
+                    width: 100,
+                    valleyPos: {x: 115, y: -75}
+                };
+
+                makeButton(canvas.width/2 - 50, canvas.height/2 - 20, 100, 40, "play", true, "Play", "white");
+                currentLevel = level;
+                //var clone = JSON.parse( JSON.stringify( currentLevel ) );
+                //resetGame(clone);
+                //spacebar handler
+                window.onkeydown = function(e){
+                    if(e.keyCode == 32) {
+                        spacedown = true;
+                    }
+                };
+                window.onkeyup = function(e){
+                    if(e.keyCode == 32) {
+                        spacedown = false;
+                    if(canShoot)
+                        canFire = true;
+                    }
+                };
+                canvas.onmousedown = doMouseDown;
+                canvas.onmousemove = doMouseMove;
             }
-          };
-          window.onkeyup = function(e){
-            if(e.keyCode == 32) {
-              spacedown = false;
-              if(canShoot)
+
+            function makeButton(x, y, w, h, id, active, buttonText, textColor) {
+                var button = {
+                    id: id,
+                    x: x,
+                    y: y,
+                    w: w,
+                    h: h,
+                    active: active,
+                    fillStyle: "#ddd",
+                    draw: function() {
+                        ctx.save();
+                        ctx.fillStyle = this.fillStyle;
+                        //console.log(this.fillStyle);
+                        ctx.fillRect(this.x, this.y, this.w, this.h);
+                        drawText(buttonText, this.x+(this.w/2), this.y+(this.h/2), 34, textColor);
+                        ctx.restore();
+                    }   
+                };
+                
+                buttons.push(button);
+            }
+
+            function resetGame(lvl) {
+                slopeVerts = generateSlope(0, 60, 30, 0, 30);
+                slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
+
+                levelDrawCallbacks = [];
+                collisionObjs = [];
+                shotsLeft = 100;
+                canShoot = true;
                 canFire = true;
+                roofStartPos = [];
+
+                world = initWorld(lvl);
             }
-          };
-            canvas.onmousedown = doMouseDown;
-            canvas.onmousemove = doMouseMove;
-        }
-        
-        function makeButton(x, y, w, h, id, buttonText, textColor) {
-            var button = {
-                id: id,
-                x: x,
-                y: y,
-                w: w,
-                h: h,
-                fillStyle: "#ddd",
-                draw: function() {
-                    ctx.save();
-                    ctx.fillStyle = this.fillStyle;
-                    //console.log(this.fillStyle);
-                    ctx.fillRect(this.x, this.y, this.w, this.h);
-                    drawText(buttonText, this.x+(this.w/2), this.y+(this.h/2), 34, textColor);
-                    ctx.restore();
+
+            function initWorld(lvl) {
+                var tempWorld;
+
+                // Init p2.js
+                tempWorld = new p2.World();
+
+                //create the main slope
+                var tempplaneBody = new p2.Body({mass:0, position:[0,0]});
+                tempplaneBody.fromPolygon(slopeVerts);
+                // planeBody.
+                tempWorld.addBody(tempplaneBody);
+                //Make a level object
+                generateLevel(slopeVerts2[29], lvl, tempWorld);
+
+                tempWorld.on("beginContact", function(evt){
+                    if(evt.bodyA.circleType == "circle1" || evt.bodyA.circleType == "circle2" ) {
+                        var canAdd = true;
+                        collisionObjs.forEach(function(body){
+                            if(body == evt.bodyA)
+                            canAdd = false;
+                        });
+
+                        if(canAdd)
+                        collisionObjs.push(evt.bodyA);
+                    }
+                });
+
+                return tempWorld;
+            }
+
+            function doMouseMove(e) {
+                var mouse = getMouse(e);
+                testButtonPos(mouse);
+            }
+            function testButtonPos(mouse) {
+                switch(gameState) {
+                    case "MAIN_MENU":
+                    case "LEVEL_SELECT":
+                    case "LEVEL_WON":
+                        for(var i = 0; i < buttons.length; i++) {
+                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
+                            mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                if(buttons[i].active) buttons[i].fillStyle = "#bfbfbf";
+                            } else {
+                                if(buttons[i].active) buttons[i].fillStyle = "#ddd";
+                            }
+                        }
+                        break;
                 }
             }
-            buttons.push(button);
-        }
+            function doMouseDown(e) {
+                var mouse = getMouse(e);
 
-        function resetGame(lvl) {
-          slopeVerts = generateSlope(0, 60, 30, 0, 30);
-          slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
-
-          levelDrawCallbacks = [];
-          collisionObjs = [];
-          shotsLeft = 100;
-          canShoot = true;
-          canFire = true;
-          roofStartPos = [];
-
-          world = initWorld(lvl);
-        }
-
-        function initWorld(lvl) {
-          var tempWorld;
-
-          // Init p2.js
-          tempWorld = new p2.World();
-
-          //create the main slope
-          var tempplaneBody = new p2.Body({mass:0, position:[0,0]});
-          tempplaneBody.fromPolygon(slopeVerts);
-         // planeBody.
-          tempWorld.addBody(tempplaneBody);
-          //Make a level object
-          generateLevel(slopeVerts2[29], lvl, tempWorld);
-
-          tempWorld.on("beginContact", function(evt){
-            if(evt.bodyA.circleType == "circle1" || evt.bodyA.circleType == "circle2" ) {
-              var canAdd = true;
-              collisionObjs.forEach(function(body){
-                if(body == evt.bodyA)
-                  canAdd = false;
-              });
-
-              if(canAdd)
-                collisionObjs.push(evt.bodyA);
-            }
-          });
-          
-          return tempWorld;
-        }
-        
-        function doMouseMove(e) {
-            var mouse = getMouse(e);
-            testButtonPos(mouse);
-        }
-        function testButtonPos(mouse) {
-            switch(gameState) {
+                switch(gameState) {
                     case "MAIN_MENU":
                         for(var i = 0; i < buttons.length; i++) {
                             if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
-                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
-                                    buttons[i].fillStyle = "#bfbfbf";
-                            } else {
-                                    buttons[i].fillStyle = "#ddd";
+                            mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                gameState = "LEVEL_SELECT";
+                                buttons = [];
+                                makeButton(canvas.width/2-50, canvas.height/2-50, 100, 100, 1, true, "1", "white");
                             }
                         }
-                    break;
+                        break;
                     case "LEVEL_SELECT":
                         for(var i = 0; i < buttons.length; i++) {
                             if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
-                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
-                                    buttons[i].fillStyle = "#bfbfbf";
-                            } else {
-                                    buttons[i].fillStyle = "#ddd";
+                            mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                gameState = "GAME_LOOP";
+                                buttons = [];
+                                //find correct pos
+                                //makeButton(0, 0, 50, 50, "menu", true, "lvl", "white");
+                                var clone = JSON.parse( JSON.stringify(currentLevel));
+                                resetGame(clone);
                             }
                         }
-                    break;
-            }
-        }
-        function doMouseDown(e) {
-            var mouse = getMouse(e);
-            
-            switch(gameState) {
-                case "MAIN_MENU":
-
-                    for(var i = 0; i < buttons.length; i++) {
+                        break;
+                    case "LEVEL_WON":
+                        for(var i = 0; i < buttons.length; i++) {
                             if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
-                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                            mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                if(buttons[i].id == "menu") {
                                     gameState = "LEVEL_SELECT";
                                     buttons = [];
-                                    //temp make buttons here
-                                makeButton(canvas.width/2-50, canvas.height/2-50, 100, 100, "1", "1", "white");
-                            }
-                        }
-                    break;
-                case "LEVEL_SELECT":
-                    for(var i = 0; i < buttons.length; i++) {
-                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
-                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                    makeButton(canvas.width/2-50, canvas.height/2-50, 100, 100, 1, true, "1", "white");
+                                } else if(buttons[i].id == "replay") {
                                     gameState = "GAME_LOOP";
                                     buttons = [];
                                     var clone = JSON.parse( JSON.stringify(currentLevel));
                                     resetGame(clone);
+                                }
+                                //add other button functions
                             }
                         }
-                    break;
-
-            }
-        }
-        
-        function getMouse(mouse) {
-            var x = mouse.pageX - mouse.target.offsetLeft;
-            var y = mouse.pageY - mouse.target.offsetTop;
-            return {x: x, y: y};
-        }
-        
-        
-        //Draws the circle
-        //This is gonna go away when I make my own circles
-        function drawCircle(circle, fill){
-          var r = circle.shapes[0].radius;
-          
-          ctx.beginPath();
-          var x = circle.position[0],
-              y = circle.position[1],
-              radius = circle.shapes[0].radius;
-          ctx.arc(x,y,radius,0,2*Math.PI);
-          ctx.stroke();
-
-          ctx.save();   
-          ctx.translate(circle.position[0], circle.position[1]);
-          ctx.rotate(circle.angle);
-          ctx.drawImage(ballImg, -1*r, -1*r, r*2, r*2);
-          ctx.restore();
-          
-          /*if(fill){
-            ctx.save();
-            ctx.fillStyle = fill;
-            ctx.fill();
-            ctx.restore();
-          }*/
-        }
-
-        function addCircle(r, m, p, type) {
-          var circleShape = new p2.Circle(r);
-          var circleBody = new p2.Body({ mass:m, position:p });
-          circleShape.material = new p2.Material();
-          circleBody.addShape(circleShape);
-          circleBody.circleType = type;
-          circleBody.lifeTime = 0;
-          world.addBody(circleBody);
-        }
-        //this is a naughty little function that generates verts
-        function generateSlope(x1, x2, y1, y2, verts) {
-          var slope = [];
-          var width = x2 - x1;
-          var periods = .85;
-          var amp = (y1 - y2)/2;
-          var twoPI = 2 * 3.1415926;
-          var frequency = twoPI/width * periods;
-          var y3;
-          
-          slope[0] = [x1,y1];
-          //magic
-          for(var i = 1; i < verts; i++) {
-            var tempX;
-            var tempY;
-            tempX = x1 + (x2 - x1)/verts * i;
-            tempY = (12*(Math.cos(frequency*tempX)) - tempX/2);
-            slope[i] = [tempX, tempY];
-            
-            if(i == verts - 1) {
-              y3 = tempY;
-            }
-          }
-          slope[verts] = [x2, y3 - 20];
-          slope[verts + 1] = [x1, y3 - 20];
-          //done
-          return slope;
-        }
-
-        function drawRoof(roof) {
-          
-          ctx.save();
-          
-          ctx.beginPath();
-          ctx.translate(roof.position[0], roof.position[1]);
-          ctx.rotate(roof.angle);
-          
-          ctx.moveTo(roof.concavePath[0][0], roof.concavePath[0][1]);
-          ctx.lineTo(roof.concavePath[1][0], roof.concavePath[1][1]);
-          ctx.lineTo(roof.concavePath[2][0], roof.concavePath[2][1]);
-          ctx.closePath();
-          ctx.stroke();
-          
-          ctx.restore();
-        }
-
-        function render(){
-          // Clear the canvas
-          ctx.clearRect(0,0,w,h);
-          ctx.save();
-
-          switch (gameState) {
-                  case "MAIN_MENU" :
-                  ctx.save();
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                  for(var i = 0; i < buttons.length; i++) buttons[i].draw();
-                    drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "red");
-                    //drawText("Play", canvas.width/2, canvas.height/2, 34, "red");
-                  ctx.restore();
-                    break;
-                  case "LEVEL_SELECT" :
-                  ctx.save();
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                  for(var i = 0; i < buttons.length; i++) buttons[i].draw();
-                  
-                    drawText("Level Select", canvas.width/2, 50, 34, "red");
-                  ctx.restore();
-                  break;
-            case "GAME_LOOP" :
-              var transX = w/4;
-              var transY = h/2;
-              var scaleMult = 1;
-                
-              world.bodies.forEach(function(body){
-                if(body.circleType == "circle1" ){
-                    if(body.position[0] > 60) 
-                      scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
-                    transX = 20-body.position[0];
-                    transY = h/3 + body.position[1];
-                    scaleMult = scaleMult < .7 ? .7 : scaleMult;
+                        break;
                 }
-              });
-              // Transform the canvas
-              // Note that we need to flip the y axis since Canvas pixel coordinates
-              // goes from top to bottom, while physics does the opposite.
-              ctx.translate(transX, transY);
-              if(canShoot) ctx.scale(2, -2);
-              else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
-              //Draw the start ramp
-              ctx.beginPath();
-              ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
-              slopeVerts2.forEach(function(coords){
-                ctx.lineTo(coords[0], coords[1]);
-              });
-              ctx.stroke();
-              ctx.closePath();
-              // Draw all bodies
-              levelDrawCallbacks.forEach(function(draw){ draw(); });
+            }
 
-              //drawCircle();
-              world.bodies.forEach(function(body){
-                if(body.circleType == "circle2" ){
-                  drawCircle(body);
-                }else if( body.circleType == "circle1"){
+            function getMouse(mouse) {
+                var x = mouse.pageX - mouse.target.offsetLeft;
+                var y = mouse.pageY - mouse.target.offsetTop;
+                return {x: x, y: y};
+            }
 
-                  if(spacedown)
-                    drawCircle(body, 'blue');
-                  else
-                    drawCircle(body);
-                } else if(body.type == "roof"){
-                  drawRoof(body);
-                  body.force[1] = -15;
+
+            //Draws the circle
+            //This is gonna go away when I make my own circles
+            function drawCircle(circle, fill){
+                var r = circle.shapes[0].radius;
+
+                ctx.beginPath();
+                var x = circle.position[0],
+                y = circle.position[1],
+                radius = circle.shapes[0].radius;
+                ctx.arc(x,y,radius,0,2*Math.PI);
+                ctx.stroke();
+
+                ctx.save();   
+                ctx.translate(circle.position[0], circle.position[1]);
+                ctx.rotate(circle.angle);
+                ctx.drawImage(ballImg, -1*r, -1*r, r*2, r*2);
+                ctx.restore();
+            }
+
+            function addCircle(r, m, p, type) {
+                var circleShape = new p2.Circle(r);
+                var circleBody = new p2.Body({ mass:m, position:p });
+                circleShape.material = new p2.Material();
+                circleBody.addShape(circleShape);
+                circleBody.circleType = type;
+                circleBody.lifeTime = 0;
+                world.addBody(circleBody);
+            }
+            //this is a naughty little function that generates verts
+            function generateSlope(x1, x2, y1, y2, verts) {
+                var slope = [];
+                var width = x2 - x1;
+                var periods = .85;
+                var amp = (y1 - y2)/2;
+                var twoPI = 2 * 3.1415926;
+                var frequency = twoPI/width * periods;
+                var y3;
+
+                slope[0] = [x1,y1];
+                //magic
+                for(var i = 1; i < verts; i++) {
+                    var tempX;
+                    var tempY;
+                    tempX = x1 + (x2 - x1)/verts * i;
+                    tempY = (12*(Math.cos(frequency*tempX)) - tempX/2);
+                    slope[i] = [tempX, tempY];
+
+                    if(i == verts - 1) {
+                        y3 = tempY;
+                    }
                 }
-              });
-              ctx.save();
-              ctx.scale(1,-1);
-              drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
-              // Restore transform
-              ctx.restore();
-              break;
-                  case "LEVEL_WON":
-                  drawText("Level Won", canvas.width/2, canvas.height/2, 34, "black");
-                  break;
-            default:
-              console.log("Render oops");
-          }
-          ctx.restore();
-        }
+                slope[verts] = [x2, y3 - 20];
+                slope[verts + 1] = [x1, y3 - 20];
+                //done
+                return slope;
+            }
 
-        function lerp(min, max, val) {
-          return (val-min)/max;
-        }
+            function drawRoof(roof) {
+                ctx.save();
 
-        function drawText( text, x, y, size, color ) {
-          ctx.font = "bold "+size+"px Monospace";
-          ctx.fillStyle = color;
-          ctx.fillText(text, x, y);
-        }
+                ctx.beginPath();
+                ctx.translate(roof.position[0], roof.position[1]);
+                ctx.rotate(roof.angle);
 
-        function calculateDeltaTime() {
-          var now, fps;
-          now = (+ new Date);
-          fps = 1000 / (now - lastTime);
-          fps = clamp(fps, 12, 20);
-          lastTime = now;
-          return 1/fps;
-        }
+                ctx.moveTo(roof.concavePath[0][0], roof.concavePath[0][1]);
+                ctx.lineTo(roof.concavePath[1][0], roof.concavePath[1][1]);
+                ctx.lineTo(roof.concavePath[2][0], roof.concavePath[2][1]);
+                ctx.closePath();
+                ctx.stroke();
 
-        function clamp( val, min, max ) {
-          return Math.max(min, Math.max(max, val));
-        }
+                ctx.restore();
+            }
 
-        function animateGameLoop() {
-          // Move physics bodies forward in time
-          var dt = calculateDeltaTime();
-          var et = 1/WORLD_SPEED;
-          world.step(et);
-          switch (levelState) {
-            case "BALL_ACTIVE" :
-              if(spacedown) { 
+            function render(){
+                // Clear the canvas
+                ctx.clearRect(0,0,w,h);
+                ctx.save();
+
+                switch (gameState) {
+                    case "MAIN_MENU":
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                        drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "red");
+                        ctx.restore();
+                        break;
+                    case "LEVEL_SELECT" :
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                        drawText("Level Select", canvas.width/2, 50, 34, "red");
+                        ctx.restore();
+                        break;
+                    case "GAME_LOOP" :
+                        var transX = w/4;
+                        var transY = h/2;
+                        var scaleMult = 1;
+
+                        world.bodies.forEach(function(body){
+                            if(body.circleType == "circle1" ){
+                                if(body.position[0] > 60) 
+                                    scaleMult = 1 - lerp(60, 60 + currentLevel.width, body.position[0]);
+                                transX = 20-body.position[0];
+                                transY = h/3 + body.position[1];
+                                scaleMult = scaleMult < .7 ? .7 : scaleMult;
+                            }
+                        });
+                        // Transform the canvas
+                        // Note that we need to flip the y axis since Canvas pixel coordinates
+                        // goes from top to bottom, while physics does the opposite.
+                        ctx.translate(transX, transY);
+                        if(canShoot) ctx.scale(2, -2);
+                        else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
+                        //Draw the start ramp
+                        ctx.beginPath();
+                        ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
+                        slopeVerts2.forEach(function(coords){
+                            ctx.lineTo(coords[0], coords[1]);
+                        });
+                        ctx.stroke();
+                        ctx.closePath();
+                        // Draw all bodies
+                        levelDrawCallbacks.forEach(function(draw){ draw(); });
+
+                        //drawCircle();
+                        world.bodies.forEach(function(body){
+                            if(body.circleType == "circle2" ){
+                                drawCircle(body);
+                            }else if( body.circleType == "circle1"){
+
+                            if(spacedown)
+                                drawCircle(body, 'blue');
+                            else
+                                drawCircle(body);
+                            } else if(body.type == "roof"){
+                                drawRoof(body);
+                                body.force[1] = -15;
+                            }
+                        });
+                        ctx.save();
+                        ctx.scale(1,-1);
+                        drawText("Balls: " + shotsLeft, 0, 0, 24, "#ddd");
+                        // Restore transform
+                        ctx.restore();
+                        break;
+                    case "LEVEL_WON":
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                        drawText("Level Won", canvas.width/2, canvas.height/2, 34, "black");
+                        ctx.restore();
+                        break;
+                    default:
+                        console.log("Render oops");
+                }
+                ctx.restore();
+            }
+
+            function lerp(min, max, val) {
+                return (val-min)/max;
+            }
+
+            function drawText( text, x, y, size, color ) {
+                ctx.font = "bold "+size+"px Monospace";
+                ctx.fillStyle = color;
+                ctx.fillText(text, x, y);
+            }
+
+            function calculateDeltaTime() {
+                var now, fps;
+                now = (+ new Date);
+                fps = 1000 / (now - lastTime);
+                fps = clamp(fps, 12, 20);
+                lastTime = now;
+                return 1/fps;
+            }
+
+            function clamp( val, min, max ) {
+                return Math.max(min, Math.max(max, val));
+            }
+
+            function animateGameLoop() {
+                // Move physics bodies forward in time
+                var dt = calculateDeltaTime();
+                var et = 1/WORLD_SPEED;
+                world.step(et);
+                switch (levelState) {
+                    case "BALL_ACTIVE" :
+                        if(spacedown) { 
+                            world.bodies.forEach(function(body){
+                                if(body.circleType == "circle1" ){
+                                    body.force[1] = -YETI_POWER;
+                                    body.force[0] = 5;
+                                }
+                            });
+                        }
+                        world.bodies.forEach(function(body){
+                            if(body.circleType == "circle1" ){
+                                body.lifeTime ++; 
+                                if( body.position[1] < -150) {
+                                    world.bodiesToBeRemoved.push(body);
+                                    canShoot = true;
+                                    levelState = "IDLE";  
+                                }
+                            }
+                        });
+
+                        //world.bodies[0].force[0] = 5;
+                        collisionObjs.forEach(function(obj){
+                        if(obj.position[0] > 60 && obj.circleType == "circle1") {
+                            world.bodiesToBeRemoved.push(obj);
+                            addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
+                            addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
+                            addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
+                            addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
+                            addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
+                            canShoot = true;
+                            levelState = "IDLE";
+                            } else if(obj.circleType == "circle2" && obj.position[0] < 60){
+                                //obj.shapes[0].radius += .1;
+                                world.bodiesToBeRemoved.push(obj);
+                            } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
+                                world.bodiesToBeRemoved.push(obj);
+                                canShoot = true;
+                                levelState = "IDLE";
+                            }
+                        });
+                        collisionObjs = [];
+                        break;
+                    case "IDLE" :
+                        if(spacedown) {
+                            if(canFire && shotsLeft > 0){
+                            addCircle(5, 4, [6,20], "circle1");
+                            canShoot = false;
+                            canFire = false;
+                            shotsLeft --;
+                            levelState = "BALL_ACTIVE";
+                            }
+                        }
+                        collisionObjs.forEach(function(obj){
+                            if(obj.circleType == "circle2" && obj.position[0] < 60){
+                                //obj.shapes[0].radius += .1;
+                                world.bodiesToBeRemoved.push(obj);
+                            }
+                        });
+                        collisionObjs = [];
+                        if(testForRoundEnd()) {
+                            gameState = "LEVEL_WON";
+                            buttons = [];
+                            makeButton(canvas.width/2-280, canvas.height/2+25, 270, 50, "menu", true, "Level Select", "white");
+                            makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white");
+                            makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white");
+                        }
+                        break;
+                    default:
+                        console.log("LEVEL");
+                }
+            }
+
+            //Tests for the end of a round
+            function testForRoundEnd() {
+                var complete = true;
+
                 world.bodies.forEach(function(body){
-                  if(body.circleType == "circle1" ){
-                    body.force[1] = -YETI_POWER;
-                    body.force[0] = 5;
-                  }
+                    if(body.type == "roof"){
+
+                        var distX = body.position[0] - roofStartPos[body.id][0];
+                        var distY = body.position[1] - roofStartPos[body.id][1];
+
+                        if(distX < 5 && distX > -5)
+                            complete = false;
+                    }
                 });
-              }
-              world.bodies.forEach(function(body){
-                  if(body.circleType == "circle1" ){
-                   body.lifeTime ++; 
-                   if( body.position[1] < -150) {
-                    world.bodiesToBeRemoved.push(body);
-                    canShoot = true;
-                    levelState = "IDLE";  
-                   }
-                  }
-              });
-
-              //world.bodies[0].force[0] = 5;
-              collisionObjs.forEach(function(obj){
-                if(obj.position[0] > 60 && obj.circleType == "circle1") {
-                  world.bodiesToBeRemoved.push(obj);
-                  addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
-                  addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
-                  addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
-                  addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
-                  addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
-                  canShoot = true;
-                  levelState = "IDLE";
-                } else if(obj.circleType == "circle2" && obj.position[0] < 60){
-                  //obj.shapes[0].radius += .1;
-                  world.bodiesToBeRemoved.push(obj);
-                } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
-                  world.bodiesToBeRemoved.push(obj);
-                  canShoot = true;
-                  levelState = "IDLE";
-                }
-              });
-              collisionObjs = [];
-              break;
-            case "IDLE" :
-              if(spacedown) {
-                if(canFire && shotsLeft > 0){
-                  addCircle(5, 4, [6,20], "circle1");
-                  canShoot = false;
-                  canFire = false;
-                  shotsLeft --;
-                  levelState = "BALL_ACTIVE";
-                }
-              }
-              collisionObjs.forEach(function(obj){
-                if(obj.circleType == "circle2" && obj.position[0] < 60){
-                  //obj.shapes[0].radius += .1;
-                  world.bodiesToBeRemoved.push(obj);
-                }
-              });
-              collisionObjs = [];
-              if(testForRoundEnd()) {
-
-                
-                gameState = "LEVEL_WON";
-                
-              }
-              break;
-            default:
-              console.log("LEVEL");
-          }
-        }
-
-        //Tests for the end of a round
-        function testForRoundEnd() {
-          var complete = true;
-
-          world.bodies.forEach(function(body){
-            if(body.type == "roof"){
-              
-              var distX = body.position[0] - roofStartPos[body.id][0];
-              var distY = body.position[1] - roofStartPos[body.id][1];
-              
-              if(distX < 5 && distX > -5)
-                complete = false;
+                return complete;
             }
-          });
-          return complete;
-        }
 
-        // Animation loop
-        function animate(){
-          requestAnimationFrame(animate);
-          switch (gameState) {
-            case "GAME_LOOP" :
-              animateGameLoop();
-              break;
-              case "MAIN_MENU":
-                if(buttons.length > 0) for(var i = 0; i < buttons.length; i++) buttons[i].draw();
-                break;
-              case "LEVEL_SELECT":
-              break;
-              case "LEVEL_WON":
-                if(spacedown)
-                  gameState = "LEVEL_SELECT";
-              break;
-                  
+            // Animation loop
+            function animate(){
+                requestAnimationFrame(animate);
+                switch (gameState) {
+                    case "GAME_LOOP" :
+                        animateGameLoop();
+                        break;
+                    case "MAIN_MENU":
+                    case "LEVEL_SELECT":
+                    case "LEVEL_WON":
+                        if(buttons.length > 0) for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                        break;
+                    default:
+                    console.log("oops"); 
+                }
+                // Render scene
+                render();
+            }
+            //Adds physics objects into the world from a passed in lvl obj
+            //also adds draw callbacks to be drawn by canvas
+            function generateLevel(start, lvl, world) {
+                //Draw callback for the valley, hard coded mostly right now
+                var xOffSet = 10;
+                var yOffSet = 20;
+                levelDrawCallbacks.push(function(){
+                    ctx.beginPath();
+                    ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
+                    ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
+                    ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
+                    ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
+                    ctx.stroke();
+                    ctx.closePath();
+                });
+                //right
 
-                  
-            default:
-              console.log("oops"); 
-          }
-          // Render scene
-          render();
-        }
-        //Adds physics objects into the world from a passed in lvl obj
-        //also adds draw callbacks to be drawn by canvas
-        function generateLevel(start, lvl, world) {
-          //Draw callback for the valley, hard coded mostly right now
-          var xOffSet = 10;
-            var yOffSet = 20;
-          levelDrawCallbacks.push(function(){
-            ctx.beginPath();
-              ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
-            ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
-            ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
-            ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
-            ctx.stroke();
-            ctx.closePath();
-          });
-          //right
-          
-          var tri3 = new p2.Body({mass:0, position:[0,0]});
-          tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
-            [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet],
-            [lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet],
-            [lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y],
-            [lvl.valleyPos.x + (xOffSet*3) + lvl.width, lvl.valleyPos.y-(yOffSet*2)],
-            [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
+                var tri3 = new p2.Body({mass:0, position:[0,0]});
+                tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
+                [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet],
+                [lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet],
+                [lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y],
+                [lvl.valleyPos.x + (xOffSet*3) + lvl.width, lvl.valleyPos.y-(yOffSet*2)],
+                [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
 
-          world.addBody(tri3);
-          var iterator = 0;
-          //this is where the house code that I haven't done yet starts
-          lvl.houses.forEach(function(house){
-            //Bottom left corner
-            var xStart = lvl.valleyPos.x + house.pos.x;
-            var yStart = lvl.valleyPos.y - yOffSet;
-            //Make main part of house
-            var base = new p2.Body({mass:0, position:[0,0]});
-            base.fromPolygon([[xStart, yStart], [xStart, yStart + house.height], 
-              [xStart + house.width, yStart + house.height], [xStart + house.width, yStart]]);
-            world.addBody(base);
+                world.addBody(tri3);
+                var iterator = 0;
+                //this is where the house code that I haven't done yet starts
+                lvl.houses.forEach(function(house){
+                    //Bottom left corner
+                    var xStart = lvl.valleyPos.x + house.pos.x;
+                    var yStart = lvl.valleyPos.y - yOffSet;
+                    //Make main part of house
+                    var base = new p2.Body({mass:0, position:[0,0]});
+                    base.fromPolygon([[xStart, yStart], [xStart, yStart + house.height], 
+                    [xStart + house.width, yStart + house.height], [xStart + house.width, yStart]]);
+                    world.addBody(base);
 
-            levelDrawCallbacks.push(function(){
-              ctx.beginPath();
-              ctx.moveTo(xStart, yStart);
-              ctx.lineTo(xStart, yStart + house.height);
-              ctx.lineTo(xStart + house.width, yStart + house.height);
-              ctx.lineTo(xStart + house.width, yStart);
-              ctx.stroke();
-              ctx.closePath();
-            });
-            //Make Roof
-            var roof = new p2.Body({mass:10, position:[0,0]});
-            roof.fromPolygon([[xStart, yStart + house.height], 
-              [xStart + house.width/2, yStart + house.height + house.roofHeight],
-              [xStart + house.width, yStart + house.height]]);
-            roof.type = "roof";
-            roof.id = iterator;
+                    levelDrawCallbacks.push(function(){
+                        ctx.beginPath();
+                        ctx.moveTo(xStart, yStart);
+                        ctx.lineTo(xStart, yStart + house.height);
+                        ctx.lineTo(xStart + house.width, yStart + house.height);
+                        ctx.lineTo(xStart + house.width, yStart);
+                        ctx.stroke();
+                        ctx.closePath();
+                    });
+                    //Make Roof
+                    var roof = new p2.Body({mass:10, position:[0,0]});
+                    roof.fromPolygon([[xStart, yStart + house.height], 
+                    [xStart + house.width/2, yStart + house.height + house.roofHeight],
+                    [xStart + house.width, yStart + house.height]]);
+                    roof.type = "roof";
+                    roof.id = iterator;
 
-            roofStartPos[iterator] = [roof.position[0], roof.position[1]];
-            world.addBody(roof);
-            iterator ++;
-          });
-        }
-      }());
+                    roofStartPos[iterator] = [roof.position[0], roof.position[1]];
+                    world.addBody(roof);
+                    iterator ++;
+                });
+            }
+        }());
 
-    </script>
+        </script>
 
-  </body>
+    </body>
 </html>
