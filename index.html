@@ -49,9 +49,10 @@
 
             var canvas, ctx, w, h, lastTime, ballImg,
             world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
+
             var levelDrawCallbacks = [];
             var collisionObjs = [];
-            var shotsLeft = 100;
+            var shotsLeft = 100, endLife = 300;
             var canShoot = true;
             var canFire = true;
             var roofStartPos = [];
@@ -90,6 +91,7 @@
                             }
                         ],
                         width: 100,
+                        shots: 3,
                         valleyPos: {x: 115, y: -75}
                     },
                     {
@@ -114,6 +116,7 @@
                             }
                         ],
                         width: 100,
+                        shots: 3,
                         valleyPos: {x: 115, y: -75}
                     }
                 ];
@@ -167,10 +170,33 @@
 
                 levelDrawCallbacks = [];
                 collisionObjs = [];
-                shotsLeft = 100;
+                shotsLeft = lvl.shots;
                 canShoot = true;
                 canFire = true;
                 roofStartPos = [];
+
+                /*levelDrawCallbacks.push(function(){
+                  ctx.save();
+                  ctx.fillStyle = "#c4e8f2";
+                  ctx.fillRect(-w,h/2, w*2, -h/2);
+                  ctx.restore();
+                });*/
+
+                levelDrawCallbacks.push(function(){
+                  ctx.save();
+                  //ctx.strokeStyle = "#d4f8f2";
+                  //Draw the start ramp
+                  ctx.beginPath();
+                  ctx.moveTo(slopeVerts2[1][0], slopeVerts2[1][1]);
+                  for(var i = 1; i < slopeVerts2.length - 2; i++) {
+                  
+                      ctx.lineTo(slopeVerts2[i][0], slopeVerts2[i][1]);
+                  }
+                  ctx.stroke();
+                  ctx.closePath();
+
+                  ctx.restore();
+                });
 
                 world = initWorld(lvl);
             }
@@ -213,6 +239,7 @@
                 switch(gameState) {
                     case "MAIN_MENU":
                     case "LEVEL_SELECT":
+                    case "LEVEL_LOST":
                     case "LEVEL_WON":
                         for(var i = 0; i < buttons.length; i++) {
                             if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
@@ -256,6 +283,33 @@
                         }
                         break;
                     case "LEVEL_WON":
+                        for(var i = 0; i < buttons.length; i++) {
+                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
+                            mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                if(buttons[i].id == "menu") {
+                                    gameState = "LEVEL_SELECT";
+                                    buttons = [];
+                                    makeButton(canvas.width/2-125, canvas.height/2-50, 100, 100, 0, true, "1", "white");
+                                    makeButton(canvas.width/2+25, canvas.height/2-50, 100, 100, 1, true, "2", "white");
+                                } else if(buttons[i].id == "replay") {
+                                    gameState = "GAME_LOOP";
+                                    buttons = [];
+                                    var clone = JSON.parse( JSON.stringify(levels[currentLevel]));
+                                    resetGame(clone);
+                                }else if(buttons[i].id == "next") {
+                                    if(buttons[i].active) {
+                                        gameState = "GAME_LOOP";
+                                        buttons = [];
+                                        currentLevel++;
+                                        var clone = JSON.parse( JSON.stringify(levels[currentLevel]));
+                                        resetGame(clone);
+                                    }
+                                }
+                                //add other button functions
+                            }
+                        }
+                        break;
+                    case "LEVEL_LOST":
                         for(var i = 0; i < buttons.length; i++) {
                             if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
                             mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
@@ -407,14 +461,7 @@
                         ctx.translate(transX, transY);
                         if(canShoot) ctx.scale(2, -2);
                         else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
-                        //Draw the start ramp
-                        ctx.beginPath();
-                        ctx.moveTo(slopeVerts2[0][0], slopeVerts2[0][1]);
-                        slopeVerts2.forEach(function(coords){
-                            ctx.lineTo(coords[0], coords[1]);
-                        });
-                        ctx.stroke();
-                        ctx.closePath();
+                        
                         // Draw all bodies
                         levelDrawCallbacks.forEach(function(draw){ draw(); });
 
@@ -446,6 +493,14 @@
                         ctx.textBaseline = "middle";
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
                         drawText("Level Won", canvas.width/2, canvas.height/2, 34, "black");
+                        ctx.restore();
+                        break;
+                    case "LEVEL_LOST":
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                        drawText("Level Lost", canvas.width/2, canvas.height/2, 34, "black");
                         ctx.restore();
                         break;
                     default:
@@ -526,15 +581,7 @@
                         collisionObjs = [];
                         break;
                     case "IDLE" :
-                        if(spacedown) {
-                            if(canFire && shotsLeft > 0){
-                            addCircle(5, 4, [6,20], "circle1");
-                            canShoot = false;
-                            canFire = false;
-                            shotsLeft --;
-                            levelState = "BALL_ACTIVE";
-                            }
-                        }
+                        
                         collisionObjs.forEach(function(obj){
                             if(obj.circleType == "circle2" && obj.position[0] < 60){
                                 //obj.shapes[0].radius += .1;
@@ -551,6 +598,24 @@
                             else
                                 makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white");
                             makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white");
+                        } else if(shotsLeft <= 0) {
+                          if(endLife <= 0){
+                            gameState = "LEVEL_LOST";
+                            buttons = [];
+                            makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white");
+                            makeButton(canvas.width/2-280, canvas.height/2+25, 270, 50, "menu", true, "Level Select", "white");
+                          }
+                          endLife--;
+
+                        }
+                        if(spacedown) {
+                            if(canFire && shotsLeft > 0){
+                            addCircle(5, 4, [6,20], "circle1");
+                            canShoot = false;
+                            canFire = false;
+                            shotsLeft --;
+                            levelState = "BALL_ACTIVE";
+                            }
                         }
                         break;
                     default:
@@ -585,6 +650,9 @@
                     case "MAIN_MENU":
                     case "LEVEL_SELECT":
                     case "LEVEL_WON":
+                        if(buttons.length > 0) for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                        break;
+                    case "LEVEL_LOST":
                         if(buttons.length > 0) for(var i = 0; i < buttons.length; i++) buttons[i].draw();
                         break;
                     default:
