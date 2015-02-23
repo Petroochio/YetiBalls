@@ -89,7 +89,7 @@
             width: 100,
             valleyPos: {x: 115, y: -75}
           };
-            buttons = [
+            /*buttons = [
                 {
                     id: "play",
                     x: canvas.width/2 - 50,
@@ -119,7 +119,9 @@
                         ctx.restore();
                     }
                 }
-            ];
+            ];*/
+            
+                  makeButton(canvas.width/2 - 50, canvas.height/2 - 20, 100, 40, "play", "Play", "white");
           currentLevel = level;
           //var clone = JSON.parse( JSON.stringify( currentLevel ) );
           //resetGame(clone);
@@ -138,6 +140,26 @@
           };
             canvas.onmousedown = doMouseDown;
             canvas.onmousemove = doMouseMove;
+        }
+        
+        function makeButton(x, y, w, h, id, buttonText, textColor) {
+            var button = {
+                id: id,
+                x: x,
+                y: y,
+                w: w,
+                h: h,
+                fillStyle: "#ddd",
+                draw: function() {
+                    ctx.save();
+                    ctx.fillStyle = this.fillStyle;
+                    //console.log(this.fillStyle);
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
+                    drawText(buttonText, this.x+(this.w/2), this.y+(this.h/2), 34, textColor);
+                    ctx.restore();
+                }
+            }
+            buttons.push(button);
         }
 
         function resetGame(lvl) {
@@ -191,16 +213,17 @@
         function testButtonPos(mouse) {
             switch(gameState) {
                     case "MAIN_MENU":
-                        if(mouse.x >= buttons[0].x && mouse.x <= buttons[0].x+buttons[0].w &&
-                          mouse.y >= buttons[0].y && mouse.y <= buttons[0].y+buttons[0].h) {
-                            buttons[0].fillStyle = "#bfbfbf";
-                        } else {
-                            buttons[0].fillStyle = "#ddd";
+                        for(var i = 0; i < buttons.length; i++) {
+                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
+                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                    buttons[i].fillStyle = "#bfbfbf";
+                            } else {
+                                    buttons[i].fillStyle = "#ddd";
+                            }
                         }
                     break;
                     case "LEVEL_SELECT":
                         for(var i = 0; i < buttons.length; i++) {
-                          if(buttons[i].id == "level")
                             if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
                                 mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
                                     buttons[i].fillStyle = "#bfbfbf";
@@ -216,22 +239,27 @@
             
             switch(gameState) {
                 case "MAIN_MENU":
-                  if(mouse.x >= buttons[0].x && mouse.x <= buttons[0].x+buttons[0].w &&
-                        mouse.y >= buttons[0].y && mouse.y <= buttons[0].y+buttons[0].h) {
-                          gameState = "LEVEL_SELECT";
-                      }
-                  break;
+
+                    for(var i = 0; i < buttons.length; i++) {
+                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
+                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                    gameState = "LEVEL_SELECT";
+                                    buttons = [];
+                                    //temp make buttons here
+                                makeButton(canvas.width/2-50, canvas.height/2-50, 100, 100, "1", "1", "white");
+                            }
+                        }
+                    break;
                 case "LEVEL_SELECT":
-                  for(var i = 0; i < buttons.length; i++) {
-                        if(buttons[i].id == "level")
-                          if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
-                              mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
-                                  gameState = "GAME_LOOP";
-                                  var clone = JSON.parse( JSON.stringify( currentLevel ) );
-                                  resetGame(clone);
-                          }
-                      }
-                  break;
+                    for(var i = 0; i < buttons.length; i++) {
+                            if(mouse.x >= buttons[i].x && mouse.x <= buttons[i].x+buttons[i].w &&
+                                mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
+                                    gameState = "GAME_LOOP";
+                                    buttons = [];
+                            }
+                        }
+                    break;
+
             }
         }
         
@@ -330,9 +358,7 @@
                   ctx.save();
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                  for(var i = 0; i < buttons.length; i++) {
-                      if(buttons[i].id == "play") buttons[i].draw();
-                  }
+                  for(var i = 0; i < buttons.length; i++) buttons[i].draw();
                     drawText("Yeti Balls", canvas.width/2, canvas.height/2 - 40, 34, "red");
                     //drawText("Play", canvas.width/2, canvas.height/2, 34, "red");
                   ctx.restore();
@@ -341,9 +367,8 @@
                   ctx.save();
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                  for(var i = 0; i < buttons.length; i++) {
-                      if(buttons[i].id == "level") buttons[i].draw();
-                  }
+                  for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                  
                     drawText("Level Select", canvas.width/2, 50, 34, "red");
                   ctx.restore();
                   break;
@@ -532,14 +557,17 @@
             case "GAME_LOOP" :
               animateGameLoop();
               break;
-                  
               case "MAIN_MENU":
+                if(buttons.length > 0) for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                break;
               case "LEVEL_SELECT":
               break;
               case "LEVEL_WON":
                 if(spacedown)
                   gameState = "LEVEL_SELECT";
               break;
+                  
+
                   
             default:
               console.log("oops"); 
