@@ -557,6 +557,7 @@
                 world.step(et);
                 switch (levelState) {
                     case "BALL_ACTIVE" :
+                        endLife = 300;
                         if(spacedown) { 
                             world.bodies.forEach(function(body){
                                 if(body.circleType == "circle1" ){
@@ -599,7 +600,7 @@
                         collisionObjs = [];
                         break;
                     case "IDLE" :
-                        
+                        var lifeZero = (endLife <= 0);
                         collisionObjs.forEach(function(obj){
                             if(obj.circleType == "circle2" && obj.position[0] < 60){
                                 //obj.shapes[0].radius += .1;
@@ -607,7 +608,7 @@
                             }
                         });
                         collisionObjs = [];
-                        if(testForRoundEnd()) {
+                        if(testForRoundEnd() && lifeZero) {
                             gameState = "LEVEL_WON";
                             buttons = [];
                             makeButton(canvas.width/2-280, canvas.height/2+25, 270, 50, "menu", true, "Level Select", "white");
@@ -616,16 +617,12 @@
                             else
                                 makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white");
                             makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white");
-                        } else if(shotsLeft <= 0) {
-                          if(endLife <= 0){
+                        } else if(shotsLeft <= 0 && lifeZero) {
                             gameState = "LEVEL_LOST";
                             buttons = [];
                             makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white");
                                 makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white");
                             makeButton(canvas.width/2-280, canvas.height/2+25, 270, 50, "menu", true, "Level Select", "white");
-                          }
-                          endLife--;
-
                         }
                         if(spacedown) {
                             if(canFire && shotsLeft > 0){
@@ -636,6 +633,7 @@
                             levelState = "BALL_ACTIVE";
                             }
                         }
+                        endLife --;
                         break;
                     default:
                         console.log("LEVEL");
