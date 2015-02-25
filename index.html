@@ -186,12 +186,22 @@
                   ctx.save();
                   //ctx.strokeStyle = "#d4f8f2";
                   //Draw the start ramp
+                    
+                    ctx.fillStyle = "white";
+                    
                   ctx.beginPath();
                   ctx.moveTo(slopeVerts2[1][0], slopeVerts2[1][1]);
                   for(var i = 1; i < slopeVerts2.length - 2; i++) {
                   
                       ctx.lineTo(slopeVerts2[i][0], slopeVerts2[i][1]);
                   }
+                    //Ghetto fix
+                    ctx.lineTo(60, -40);
+                    ctx.lineTo(slopeVerts2[1][0], -40);
+                    ctx.lineTo(slopeVerts2[1][0], slopeVerts2[1][1]);
+                    
+                    ctx.fill();
+                    
                   ctx.stroke();
                   ctx.closePath();
 
@@ -422,6 +432,13 @@
             function render(){
                 // Clear the canvas
                 ctx.clearRect(0,0,w,h);
+                
+                //GHETTO BG COLOR
+                if(gameState == "GAME_LOOP") {
+                    ctx.fillStyle = "#b6e0ff";
+                    ctx.fillRect(0, 0, w, h);
+                }
+                
                 ctx.save();
 
                 switch (gameState) {
@@ -482,9 +499,9 @@
                         });
                         ctx.save();
                         ctx.scale(1,-1);
-                        drawText("Knock over all of the roofs", 10, -40, 10, "#ddd");
-                        drawText("Balls: " + shotsLeft, 10, -25, 10, "#ddd");
-                        drawText("Press Space!", 10, -15, 10, "#ddd");
+                        drawText("Knock over all of the roofs", 10, -40, 10, "white");
+                        drawText("Balls: " + shotsLeft, 10, -25, 10, "white");
+                        drawText("Press Space!", 10, -15, 10, "white");
                         // Restore transform
                         ctx.restore();
                         break;
@@ -604,6 +621,7 @@
                             gameState = "LEVEL_LOST";
                             buttons = [];
                             makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white");
+                                makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white");
                             makeButton(canvas.width/2-280, canvas.height/2+25, 270, 50, "menu", true, "Level Select", "white");
                           }
                           endLife--;
@@ -669,11 +687,19 @@
                 var xOffSet = 10;
                 var yOffSet = 20;
                 levelDrawCallbacks.push(function(){
+                    ctx.fillStyle = "white";
                     ctx.beginPath();
                     ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
                     ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
                     ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
                     ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
+                    
+                    //GHETTO
+                    ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y-40);
+                    ctx.lineTo(lvl.valleyPos.x, lvl.valleyPos.y-40);
+                    ctx.lineTo(lvl.valleyPos.x, lvl.valleyPos.y);
+                    ctx.fill();
+                    
                     ctx.stroke();
                     ctx.closePath();
                 });
@@ -706,6 +732,9 @@
                         ctx.lineTo(xStart, yStart + house.height);
                         ctx.lineTo(xStart + house.width, yStart + house.height);
                         ctx.lineTo(xStart + house.width, yStart);
+                        /*ctx.moveTo(xStart, yStart);
+                        ctx.fillStyle = "white";
+                        ctx.fill();*/
                         ctx.stroke();
                         ctx.closePath();
                     });
