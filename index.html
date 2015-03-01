@@ -52,7 +52,7 @@
             var transXplus = 2;
             var transYplus = 2;
 
-            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg,
+            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree,
             world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
 
             var levelDrawCallbacks = [];
@@ -67,8 +67,16 @@
             animate();
 
             function init(){
+                //Load Images
                 ballImg = new Image();
                 ballImg.src = "assets/ball1.png";
+
+                babyFroz = new Image();
+                babyFroz.src = "assets/babycaged.png"
+
+                babyFree = new Image();
+                babyFree.src = "assets/babyfree.png";
+
                 
                 slopeVerts = generateSlope(0, 60, 30, 0, 30);
                 slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
@@ -415,6 +423,24 @@
                 ctx.restore();
             }
 
+            function drawBaby(baby) {
+                var r = baby.shapes[0].radius;
+
+                if(baby.trapped) {
+                    ctx.save();   
+                    ctx.translate(baby.position[0], baby.position[1]);
+                    ctx.rotate(baby.angle);
+                    ctx.drawImage(babyFroz, -1*r, -1*r, r*2, r*2);
+                    ctx.restore();
+                }else {
+                    ctx.save();   
+                    ctx.translate(baby.position[0], baby.position[1]);
+                    ctx.rotate(baby.angle);
+                    ctx.drawImage(babyFree, -1*r, -1*r, r*2, r*2);
+                    ctx.restore();
+                }
+            }
+
             function addCircle(r, m, p, type) {
                 var circleShape = new p2.Circle(r);
                 var circleBody = new p2.Body({ mass:m, position:p });
@@ -543,7 +569,7 @@
 
                         //drawCircle();
                         world.bodies.forEach(function(body){
-                            if(body.circleType == "circle2" || body.circleType == "baby" ){
+                            if(body.circleType == "circle2" ){
                                 drawCircle(body);
                             }else if( body.circleType == "circle1"){
 
@@ -551,6 +577,8 @@
                                     drawCircle(body, 'blue');
                                 else
                                     drawCircle(body);
+                            }else if(body.circleType == "baby"){
+                                drawBaby(body);
                             } else if(body.type == "tri"){
                               //  drawRoof(body);
                               drawTri(body);
