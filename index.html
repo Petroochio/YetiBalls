@@ -510,7 +510,7 @@
                 ctx.beginPath();
                 ctx.translate(tri.position[0], tri.position[1]);
                 ctx.rotate(tri.angle);
-
+                ctx.lineWidth = 1;
                 ctx.moveTo(tri.concavePath[0][0], tri.concavePath[0][1]);
                 ctx.lineTo(tri.concavePath[1][0], tri.concavePath[1][1]);
                 ctx.lineTo(tri.concavePath[2][0], tri.concavePath[2][1]);
@@ -538,12 +538,13 @@
                 ctx.lineTo(box.concavePath[3][0], box.concavePath[3][1]);
                 ctx.closePath();
                 ctx.stroke();
-
+                ctx.save();
+                ctx.rotate(3.14);
                 var boxW = box.concavePath[0][0] - box.concavePath[2][0];
                 var boxH = box.concavePath[0][1] - box.concavePath[2][1];
                 ctx.drawImage(recImg, -boxW/2,-boxH/2,  boxW, boxH);
                 
-
+                ctx.restore();
                 ctx.restore();
             }
 
