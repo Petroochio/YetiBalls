@@ -52,7 +52,7 @@
             var transXplus = 2;
             var transYplus = 2;
 
-            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree,
+            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree, menuIcon, replayIcon, nextIcon,
             world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
 
             var levelDrawCallbacks = [];
@@ -76,6 +76,15 @@
 
                 babyFree = new Image();
                 babyFree.src = "assets/babyfree.png";
+                
+                menuIcon = new Image();
+                menuIcon.src = "assets/menuIcon.png";
+                
+                replayIcon = new Image();
+                replayIcon.src = "assets/replayIcon.png";
+                
+                nextIcon = new Image();
+                nextIcon.src = "assets/nextIcon.png";
 
                 recImg = new Image();
                 recImg.src = "assets/rect.png";
@@ -176,31 +185,35 @@
                 canvas.onmousemove = doMouseMove;
             }
 
-            function makeButton(x, y, w, h, id, active, buttonText, textColor, textSize) {
+            function makeButton(x, y, w, h, radius, id, active, buttonText, textColor, textSize) {
                 var button = {
                     id: id,
                     x: x,
                     y: y,
                     w: w,
                     h: h,
+                    radius: radius,
                     active: active,
                     fillStyle: "#b2b2b2",
                     draw: function() {
                         ctx.save();
                         ctx.fillStyle = this.fillStyle;
                         ctx.beginPath();
-                        ctx.moveTo(this.x + 5, this.y);
-                        ctx.lineTo(this.x + this.w - 5, this.y);
-                        ctx.quadraticCurveTo(this.x + this.w, this.y, this.x + this.w, this.y + 5);
-                        ctx.lineTo(this.x + this.w, this.y + this.h - 5);
-                        ctx.quadraticCurveTo(this.x + this.w, this.y + this.h, this.x + this.w - 5, this.y + this.h);
-                        ctx.lineTo(this.x + 5, this.y + this.h);
-                        ctx.quadraticCurveTo(this.x, this.y + this.h, this.x, this.y + this.h - 5);
-                        ctx.lineTo(this.x, this.y + 5);
-                        ctx.quadraticCurveTo(this.x, this.y, this.x + 5, this.y);
+                        ctx.moveTo(this.x + this.radius, this.y);
+                        ctx.lineTo(this.x + this.w - this.radius, this.y);
+                        ctx.quadraticCurveTo(this.x + this.w, this.y, this.x + this.w, this.y + this.radius);
+                        ctx.lineTo(this.x + this.w, this.y + this.h - this.radius);
+                        ctx.quadraticCurveTo(this.x + this.w, this.y + this.h, this.x + this.w - this.radius, this.y + this.h);
+                        ctx.lineTo(this.x + this.radius, this.y + this.h);
+                        ctx.quadraticCurveTo(this.x, this.y + this.h, this.x, this.y + this.h - this.radius);
+                        ctx.lineTo(this.x, this.y + this.radius);
+                        ctx.quadraticCurveTo(this.x, this.y, this.x + this.radius, this.y);
                         ctx.closePath();
                         ctx.fill();
-                        drawText(buttonText, this.x+(this.w/2), this.y+(this.h/2), textSize, textColor);
+                        if(this.id == "next") ctx.drawImage(nextIcon, this.x+(this.radius/2), this.y+(this.radius/2), this.w-this.radius, this.w-this.radius);
+                        else if(this.id == "replay") ctx.drawImage(replayIcon, this.x+(this.radius/2), this.y+(this.radius/2), this.w-this.radius, this.w-this.radius);
+                        else if(this.id == "menu") ctx.drawImage(menuIcon, this.x+(this.radius/2), this.y+(this.radius/2), this.w-this.radius, this.w-this.radius);
+                        else drawText(buttonText, this.x+(this.w/2), this.y+(this.h/2), textSize, textColor);
                         ctx.restore();
                     }   
                 };
@@ -212,28 +225,29 @@
                 buttons = [];
                 switch(gameState) {
                         case "MAIN_MENU":
-                            makeButton(canvas.width/2 - 50, canvas.height/2 - 20, 100, 40, "play", true, "Play", "white", 32);
+                            makeButton(canvas.width/2 - 50, canvas.height/2 - 20, 100, 40, 5, "play", true, "Play", "white", 32);
                             break;
                         case "LEVEL_SELECT":
                             for(var i = 0; i < levels.length; i++) {
                                 makeButton(/*find a good x/y pos later*/canvas.width/4 * i, canvas.height/2-50,
-                                           100, 100,
+                                           100, 100, 5,
                                            i, levels[i].completed,
                                            (i + 1), "white", 32);
                             }
                             break;
                         case "GAME_LOOP":
-                            makeButton(canvas.width-40, 10, 30, 30, "replay", true, "r", "white", 16);
+                            makeButton(canvas.width-40, 10, 30, 30, 5, "replay", true, "r", "white", 16);
+                            makeButton(canvas.width-80, 10, 30, 30, 5, "menu", true, "m", "white", 16);
                             break;
                         case "LEVEL_WON":
                         case "LEVEL_LOST":
-                            makeButton(canvas.width/2-135, canvas.height/2+90, 270, 50, "replay", true, "Replay Level", "white", 16);
+                            makeButton(canvas.width/2-175, canvas.height/2+25, 100, 100, 10, "menu", true, "Level Select", "white", 16);
+                            makeButton(canvas.width/2-50, canvas.height/2+25, 100, 100, 10, "replay", true, "Replay Level", "white", 16);
                             if(currentLevel < levels.length - 1 || levels.completed == true) {
-                                makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", true, "Next Level", "white", 16);
+                                makeButton(canvas.width/2+75, canvas.height/2+25, 100, 100, 10, "next", true, "Next Level", "white", 16);
                             } else {
-                                makeButton(canvas.width/2+10, canvas.height/2+25, 270, 50, "next", false, "Next Level", "white", 16);
+                                makeButton(canvas.width/2+75, canvas.height/2+25, 100, 100, 10, "next", false, "Next Level", "white", 16);
                             }
-                            makeButton(canvas.width/2-280, canvas.height/2+25, 270, 50, "menu", true, "Level Select", "white", 16);
                             break;
                 }
             }
@@ -397,6 +411,10 @@
                                     levelState = "IDLE";
                                     var clone = JSON.parse( JSON.stringify(levels[currentLevel]));
                                     resetGame(clone);
+                                } else if(buttons[i].id == "menu") {
+                                    levelState = "IDLE";
+                                    gameState = "LEVEL_SELECT";
+                                    makeHUD();
                                 }
                             }
                         }
