@@ -584,12 +584,16 @@
                         var transY = h/2;
                         var scaleMult = 1;
                         
+                        if(levelState === "BALL_ACTIVE" && spacedown){
+                            scaleMult += .1;
+                        }
+
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
                         
                         world.bodies.forEach(function(body){
                             if(body.circleType == "circle1" ){
                                 if(body.position[0] > 60) 
-                                    scaleMult = 1 - lerp(60, 60 + levels[currentLevel].width, body.position[0]);
+                                    scaleMult = scaleMult - lerp(60, 60 + levels[currentLevel].width, body.position[0]);
                                 transX = 20-body.position[0];
                                 transY = h/3 + body.position[1];
                                 scaleMult = scaleMult < .7 ? .7 : scaleMult;
