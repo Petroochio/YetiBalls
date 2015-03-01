@@ -5,9 +5,14 @@
         <meta charset="utf-8">
         <script src="p2.js-master/build/p2.js"></script>
         <style>
-        canvas{
-        border: 1px solid black;
-        }
+            @font-face {
+                font-family: snowcaps;
+                src: url("assets/SnowtopCaps.otf");
+            }
+            
+            canvas {
+                border: 1px solid black;
+            }
         </style>
 
     </head>
@@ -582,7 +587,7 @@
             }
 
             function drawText( text, x, y, size, color ) {
-                ctx.font = "bold "+size+"px Monospace";
+                ctx.font = "bold "+size+"px snowcaps";
                 ctx.fillStyle = color;
                 ctx.fillText(text, x, y);
             }
@@ -700,7 +705,8 @@
                             complete = false;
                         }
                     }
-                }); 
+                });
+                
                 return complete;
             }
 
