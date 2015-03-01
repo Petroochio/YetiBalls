@@ -55,7 +55,7 @@
             var shotsLeft = 100, endLife = 300;
             var canShoot = true;
             var canFire = true;
-            var roofStartPos = [];
+            var babyStates = [];
             var buttons = [];
             var levels = [];
             init();
@@ -78,18 +78,22 @@
                 //levels
                 levels = [
                     {
-                        houses: [
-                            {
-                                pos: {x: 40, y: 0},
-                                width: 10,
-                                height: 10,
-                                roofHeight: 10
-                            },
+                        shapes: [
                             {
                                 pos: {x: 20, y: 0},
-                                width: 5,
-                                height: 12,
-                                roofHeight: 10
+                                width: 15,
+                                height: 14,
+                                type: "tri"
+                            },
+                            {
+                                pos: {x: 65, y: 0},
+                                width: 15,
+                                height: 14,
+                                type: "tri"
+                            }
+                        ],
+                        babies: [{
+                                pos: {x: 30, y: 0}
                             }
                         ],
                         width: 100,
@@ -98,24 +102,28 @@
                         slope: slopeVerts
                     },
                     {
-                        houses: [
+                        shapes: [
                             {
                                 pos: {x: 65, y: 0},
                                 width: 15,
                                 height: 14,
-                                roofHeight: 10
+                                type: "tri"
                             },
                             {
                                 pos: {x: 40, y: 0},
                                 width: 10,
                                 height: 10,
-                                roofHeight: 10
+                                type: "rect"
                             },
                             {
                                 pos: {x: 20, y: 0},
                                 width: 5,
                                 height: 12,
-                                roofHeight: 10
+                                type: "rect"
+                            }
+                        ],
+                        babies: [{
+                                pos: {x: 30, y:0}
                             }
                         ],
                         width: 100,
@@ -138,8 +146,8 @@
                 window.onkeyup = function(e){
                     if(e.keyCode == 32) {
                         spacedown = false;
-                    if(canShoot)
-                        canFire = true;
+                        if(canShoot)
+                            canFire = true;
                     }
                 };
                 canvas.onmousedown = doMouseDown;
@@ -177,7 +185,7 @@
                 shotsLeft = lvl.shots;
                 canShoot = true;
                 canFire = true;
-                roofStartPos = [];
+                
                 
                 makeButton(canvas.width-40, 10, 30, 30, "replay", true, "r", "white", 16);
 
@@ -240,8 +248,11 @@
                         });
 
                         if(canAdd)
-                        collisionObjs.push(evt.bodyA);
+                           collisionObjs.push(evt.bodyA);
                     }
+                    if (evt.bodyA.circleType === "circle1" || evt.bodyA.circleType === "circle2" && evt.bodyB.circleType === "baby") {
+                        evt.bodyB.trapped = false;
+                    };
                 });
 
                 return tempWorld;
@@ -397,6 +408,7 @@
                 circleBody.addShape(circleShape);
                 circleBody.circleType = type;
                 circleBody.lifeTime = 0;
+                circleBody.trapped = true;
                 world.addBody(circleBody);
             }
             //this is a naughty little function that generates verts
@@ -428,16 +440,33 @@
                 return slope;
             }
 
-            function drawRoof(roof) {
+            function drawTri(tri) {
                 ctx.save();
 
                 ctx.beginPath();
-                ctx.translate(roof.position[0], roof.position[1]);
-                ctx.rotate(roof.angle);
+                ctx.translate(tri.position[0], tri.position[1]);
+                ctx.rotate(tri.angle);
 
-                ctx.moveTo(roof.concavePath[0][0], roof.concavePath[0][1]);
-                ctx.lineTo(roof.concavePath[1][0], roof.concavePath[1][1]);
-                ctx.lineTo(roof.concavePath[2][0], roof.concavePath[2][1]);
+                ctx.moveTo(tri.concavePath[0][0], tri.concavePath[0][1]);
+                ctx.lineTo(tri.concavePath[1][0], tri.concavePath[1][1]);
+                ctx.lineTo(tri.concavePath[2][0], tri.concavePath[2][1]);
+                ctx.closePath();
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function drawBox(box) {
+                ctx.save();
+
+                ctx.beginPath();
+                ctx.translate(box.position[0], box.position[1]);
+                ctx.rotate(box.angle);
+
+                ctx.moveTo(box.concavePath[0][0], box.concavePath[0][1]);
+                ctx.lineTo(box.concavePath[1][0], box.concavePath[1][1]);
+                ctx.lineTo(box.concavePath[2][0], box.concavePath[2][1]);
+                ctx.lineTo(box.concavePath[3][0], box.concavePath[3][1]);
                 ctx.closePath();
                 ctx.stroke();
 
@@ -501,16 +530,20 @@
 
                         //drawCircle();
                         world.bodies.forEach(function(body){
-                            if(body.circleType == "circle2" ){
+                            if(body.circleType == "circle2" || body.circleType == "baby" ){
                                 drawCircle(body);
                             }else if( body.circleType == "circle1"){
 
-                            if(spacedown)
-                                drawCircle(body, 'blue');
-                            else
-                                drawCircle(body);
-                            } else if(body.type == "roof"){
-                                drawRoof(body);
+                                if(spacedown)
+                                    drawCircle(body, 'blue');
+                                else
+                                    drawCircle(body);
+                            } else if(body.type == "tri"){
+                              //  drawRoof(body);
+                              drawTri(body);
+                                body.force[1] = -15;
+                            } else if(body.type == "rect"){
+                                drawBox(body);
                                 body.force[1] = -15;
                             }
                         });
@@ -662,15 +695,12 @@
                 var complete = true;
 
                 world.bodies.forEach(function(body){
-                    if(body.type == "roof"){
-
-                        var distX = body.position[0] - roofStartPos[body.id][0];
-                        var distY = body.position[1] - roofStartPos[body.id][1];
-
-                        if(distX < 5 && distX > -5)
+                    if(body.circleType == "baby"){
+                        if(body.trapped){
                             complete = false;
+                        }
                     }
-                });
+                }); 
                 return complete;
             }
 
@@ -729,46 +759,45 @@
                 [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
 
                 world.addBody(tri3);
-                var iterator = 0;
+                
                 //this is where the house code that I haven't done yet starts
-                lvl.houses.forEach(function(house){
+                lvl.shapes.forEach(function(shape){
                     //Bottom left corner
-                    var xStart = lvl.valleyPos.x + house.pos.x;
+                    var xStart = lvl.valleyPos.x + shape.pos.x;
                     var yStart = lvl.valleyPos.y - yOffSet;
                     //Make main part of house
-                    var base = new p2.Body({mass:0, position:[0,0]});
-                    base.fromPolygon([[xStart, yStart], [xStart, yStart + house.height], 
-                    [xStart + house.width, yStart + house.height], [xStart + house.width, yStart]]);
-                    world.addBody(base);
+                    var body;
+                    if(shape.type === "rect") {
+                        body = new p2.Body({mass:1, position:[0,0]});
+                        body.fromPolygon([[xStart, yStart], [xStart, yStart + shape.height], 
+                        [xStart + shape.width, yStart + shape.height], [xStart + shape.width, yStart]]);
+                        body.type = "rect";
+                        world.addBody(body);
+                    }
+                    if(shape.type == "tri") {
+                        body = new p2.Body({mass:1, position:[0,0]});
+                        body.fromPolygon([[xStart, yStart], [xStart + shape.width/2, yStart + shape.height], 
+                        [xStart + shape.width, yStart]]);
+                        body.type = "tri";
+                        world.addBody(body);
+                    }
+                    
+                });
 
-                    levelDrawCallbacks.push(function(){
-                        ctx.beginPath();
-                        ctx.moveTo(xStart, yStart);
-                        ctx.lineTo(xStart, yStart + house.height);
-                        ctx.lineTo(xStart + house.width, yStart + house.height);
-                        ctx.lineTo(xStart + house.width, yStart);
-                        /*ctx.moveTo(xStart, yStart);
-                        ctx.fillStyle = "white";
-                        ctx.fill();*/
-                        ctx.stroke();
-                        ctx.closePath();
-                    });
-                    //Make Roof
-                    var roof = new p2.Body({mass:10, position:[0,0]});
-                    roof.fromPolygon([[xStart, yStart + house.height], 
-                    [xStart + house.width/2, yStart + house.height + house.roofHeight],
-                    [xStart + house.width, yStart + house.height]]);
-                    roof.type = "roof";
-                    roof.id = iterator;
-
-                    roofStartPos[iterator] = [roof.position[0], roof.position[1]];
-                    world.addBody(roof);
-                    iterator ++;
+                lvl.babies.forEach(function(baby){
+                    //addCircle(1, 5, ,"baby");
+                    var circleShape = new p2.Circle(5);
+                    var circleBody = new p2.Body({ mass:1, position:[lvl.valleyPos.x + baby.pos.x, lvl.valleyPos.y - yOffSet +baby.pos.y + 5] });
+                    circleShape.material = new p2.Material();
+                    circleBody.addShape(circleShape);
+                    circleBody.circleType = "baby";
+                    circleBody.lifeTime = 0;
+                    circleBody.trapped = true;
+                    world.addBody(circleBody);
                 });
             }
         }());
 
         </script>
-
     </body>
 </html>
