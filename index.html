@@ -138,7 +138,7 @@
                         shots: 3,
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
-                        completed: true,
+                        completed: false,
                         snowflakes: 0,
                         par: 1,
                     },
@@ -258,10 +258,17 @@
                             break;
                         case "LEVEL_SELECT":
                             for(var i = 0; i < levels.length; i++) {
-                                makeButton(100 + (canvas.width/5 * i), 100,
-                                           100, 100, 10,
-                                           i, levels[i].completed,
-                                           (i + 1), "black", 32);
+                                if(i == 0 || levels[i-1].completed) {
+                                    makeButton(100 + (canvas.width/5 * i), 100,
+                                               100, 100, 10,
+                                               i, true,
+                                               (i + 1), "black", 32);
+                                } else {
+                                    makeButton(100 + (canvas.width/5 * i), 100,
+                                               100, 100, 10,
+                                               i, levels[i].completed,
+                                               (i + 1), "black", 32);
+                                }
                             }
                             break;
                         case "GAME_LOOP":
