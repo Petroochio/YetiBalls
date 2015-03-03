@@ -67,6 +67,9 @@
             animate();
 
             function init(){
+                //remove in final version
+                localStorage.removeItem('levelsData');
+                
                 //Load Images
                 ballImg = new Image();
                 ballImg.src = "assets/ball1.png";
@@ -129,7 +132,9 @@
                         shots: 3,
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
-                        completed: true
+                        completed: true,
+                        snowflakes: 0,
+                        par: 1
                     },
                     {
                         shapes: [
@@ -160,7 +165,9 @@
                         shots: 3,
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
-                        completed: false
+                        completed: false,
+                        snowflakes: 0,
+                        par: 2
                     }
                 ];
                 localStorage.setItem('levelsData', JSON.stringify(levels));
@@ -748,6 +755,7 @@
                         if(testForRoundEnd() && lifeZero) {
                             gameState = "LEVEL_WON";
                             levels[currentLevel].completed = true;
+                            calculateSnowflakes();
                             localStorage.removeItem('levelsData');
                             localStorage.setItem('levelsData', JSON.stringify(levels));
                             makeHUD();
@@ -784,6 +792,20 @@
                 });
                 
                 return complete;
+            }
+            
+            function calculateSnowflakes() {
+                //shots taken = levels[currentLevel].shots - shotsLeft
+                //shots given = levels[currentLevel].shots
+                //par = levels[currentLevel].par
+                //tested equation: (shots taken - par) / (shots given - par)
+                if(levels[currentLevel].shots - shotsLeft <= levels[currentLevel].par) {
+                    console.log("you got 3 snowflakes");
+                } else {
+                    var numerator = levels[currentLevel].shots - shotsLeft - levels[currentLevel].par;
+                    var denominator = levels[currentLevel].shots - levels[currentLevel].par;
+                    console.log("you got " + numerator/denominator + " bitch");
+                }
             }
 
             // Animation loop
