@@ -52,8 +52,8 @@
             var transXplus = 2;
             var transYplus = 2;
 
-            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree, menuIcon, replayIcon, nextIcon,
-            world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel;
+            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree, menuIcon, replayIcon, nextIcon, snowflakeOutlineImg, snowflakeFillImg,
+            world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel, levelScore;
 
             var levelDrawCallbacks = [];
             var collisionObjs = [];
@@ -67,6 +67,9 @@
             animate();
 
             function init(){
+                //remove in final version
+                localStorage.removeItem('levelsData');
+                
                 //Load Images
                 ballImg = new Image();
                 ballImg.src = "assets/ball1.png";
@@ -91,6 +94,12 @@
 
                 triImg = new Image();
                 triImg.src = "assets/tri.png";
+                
+                snowflakeOutlineImg = new Image();
+                snowflakeOutlineImg.src = "assets/snowflakeOutline.png";
+                
+                snowflakeFillImg = new Image();
+                snowflakeFillImg.src = "assets/snowflakeFill.png";
 
                 
                 slopeVerts = generateSlope(0, 60, 30, 0, 30);
@@ -129,8 +138,10 @@
                         shots: 3,
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
-                        completed: true,
-                        start: slopeVerts[29]
+                        start: slopeVerts[29],
+                        completed: false,
+                        snowflakes: 0,
+                        par: 1
                     },
                     {
                         shapes: [
@@ -162,13 +173,16 @@
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
                         completed: false,
-                        start: slopeVerts[29]
+                        start: slopeVerts[29],
+                        snowflakes: 0,
+                        par: 2
                     }
                 ];
                 localStorage.setItem('levelsData', JSON.stringify(levels));
                 
                 makeHUD();
                 currentLevel = 0;
+                levelScore = 0;
                 //var clone = JSON.parse( JSON.stringify( levels[currentLevel] ) );
                 //resetGame(clone);
                 //spacebar handler
@@ -302,7 +316,15 @@
                                                                    this.w - this.radius, this.h - this.radius);
                         else if(this.id == "menu") ctx.drawImage(menuIcon, this.x + (this.radius/2), this.y + (this.radius/2),
                                                                  this.w - this.radius, this.h - this.radius);
+                        else if(this.id === parseInt(this.id, 10)) {
+                            //var width = (this.w);
+                            //console.log(width);
+                            drawText(buttonText, this.x + (this.w/2), this.y + textSize, textSize, textColor);
+                            ctx.drawImage(snowflakeOutlineImg, this.x+3, this.y+this.h/2, this.w-5, 45);
+                            ctx.drawImage(snowflakeFillImg, 0, 0, 245*levels[this.id].snowflakes, 122, this.x+3, this.y+this.h/2, (this.w-5)*levels[this.id].snowflakes, 45);
+                        }
                         else drawText(buttonText, this.x + (this.w/2), this.y + (this.h/2), textSize, textColor);
+                        //console.log(parseInt(this.id, 10));
                         ctx.restore();
                     }   
                 };
@@ -318,10 +340,17 @@
                             break;
                         case "LEVEL_SELECT":
                             for(var i = 0; i < levels.length; i++) {
-                                makeButton(100 + (canvas.width/5 * i), 100,
-                                           100, 100, 10,
-                                           i, levels[i].completed,
-                                           (i + 1), "black", 32);
+                                if(i == 0 || levels[i-1].completed) {
+                                    makeButton(100 + (canvas.width/5 * i), 100,
+                                               100, 100, 10,
+                                               i, true,
+                                               (i + 1), "black", 32);
+                                } else {
+                                    makeButton(100 + (canvas.width/5 * i), 100,
+                                               100, 100, 10,
+                                               i, levels[i].completed,
+                                               (i + 1), "black", 32);
+                                }
                             }
                             break;
                         case "GAME_LOOP":
@@ -330,12 +359,12 @@
                             break;
                         case "LEVEL_WON":
                         case "LEVEL_LOST":
-                            makeButton(canvas.width/2-175, canvas.height/2, 100, 100, 10, "menu", true, "Level Select", "white", 16);
-                            makeButton(canvas.width/2-50, canvas.height/2, 100, 100, 10, "replay", true, "Replay Level", "white", 16);
+                            makeButton(canvas.width/2-137.5, canvas.height/2+50, 75, 75, 10, "menu", true, "Level Select", "white", 16);
+                            makeButton(canvas.width/2-37.5, canvas.height/2+50, 75, 75, 10, "replay", true, "Replay Level", "white", 16);
                             if(currentLevel < levels.length - 1 || levels.completed == true) {
-                                makeButton(canvas.width/2+75, canvas.height/2, 100, 100, 10, "next", true, "Next Level", "white", 16);
+                                makeButton(canvas.width/2+62.5, canvas.height/2+50, 75, 75, 10, "next", true, "Next Level", "white", 16);
                             } else {
-                                makeButton(canvas.width/2+75, canvas.height/2, 100, 100, 10, "next", false, "Next Level", "white", 16);
+                                makeButton(canvas.width/2+62.5, canvas.height/2+50, 75, 75, 10, "next", false, "Next Level", "white", 16);
                             }
                             break;
                 }
@@ -348,6 +377,7 @@
                 levelDrawCallbacks = [];
                 collisionObjs = [];
                 shotsLeft = lvl.shots;
+                levelScore = 0;
                 canShoot = true;
                 canFire = true;
 
@@ -727,7 +757,9 @@
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
-                        drawText("Level Won", canvas.width/2, canvas.height/2 - 50, 34, "black");
+                        drawText("Level Won", canvas.width/2, canvas.height/2 - 125, 34, "black");
+                        ctx.drawImage(snowflakeOutlineImg, canvas.width/2-122.5, canvas.height/2-90);
+                        ctx.drawImage(snowflakeFillImg, 0, 0, (245*levelScore), 122, canvas.width/2-122.5, canvas.height/2-90, (245*levelScore), 122);
                         ctx.restore();
                         break;
                     case "LEVEL_LOST":
@@ -735,7 +767,8 @@
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
-                        drawText("Level Lost", canvas.width/2, canvas.height/2 - 50, 34, "black");
+                        drawText("Level Lost", canvas.width/2, canvas.height/2 - 125, 34, "black");
+                        ctx.drawImage(snowflakeOutlineImg, canvas.width/2-122.5, canvas.height/2-90);
                         ctx.restore();
                         break;
                     default:
@@ -828,6 +861,7 @@
                         if(testForRoundEnd() && lifeZero) {
                             gameState = "LEVEL_WON";
                             levels[currentLevel].completed = true;
+                            calculateSnowflakes();
                             localStorage.removeItem('levelsData');
                             localStorage.setItem('levelsData', JSON.stringify(levels));
                             makeHUD();
@@ -864,6 +898,21 @@
                 });
                 
                 return complete;
+            }
+            
+            function calculateSnowflakes() {
+                var numerator = levels[currentLevel].shots - shotsLeft - levels[currentLevel].par;
+                var denominator = levels[currentLevel].shots - levels[currentLevel].par;
+                var rating = numerator/denominator;
+                levelScore = 1.0 - rating;
+                
+                if(levels[currentLevel].shots - shotsLeft <= levels[currentLevel].par) levels[currentLevel].snowflakes = 1;
+                else {
+                    if(rating == 1) levels[currentLevel].snowflakes = 0;
+                    else {
+                        if(levels[currentLevel].snowflakes < levelScore) levels[currentLevel].snowflakes = levelScore;
+                    }
+                }
             }
 
             // Animation loop
