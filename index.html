@@ -129,7 +129,8 @@
                         shots: 3,
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
-                        completed: true
+                        completed: true,
+                        start: slopeVerts[29]
                     },
                     {
                         shapes: [
@@ -160,7 +161,8 @@
                         shots: 3,
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
-                        completed: false
+                        completed: false,
+                        start: slopeVerts[29]
                     }
                 ];
                 localStorage.setItem('levelsData', JSON.stringify(levels));
@@ -184,6 +186,86 @@
                 };
                 canvas.onmousedown = doMouseDown;
                 canvas.onmousemove = doMouseMove;
+            }
+
+            //Adds physics objects into the world from a passed in lvl obj
+            //also adds draw callbacks to be drawn by canvas
+            function generateLevel(start, lvl, world) {
+                //Draw callback for the valley, hard coded mostly right now
+                var xOffSet = 10;
+                var yOffSet = 20;
+                levelDrawCallbacks.push(function(){
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
+                    ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
+                    ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
+                    ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
+                    
+                    //GHETTO
+                    ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y-40);
+                    ctx.lineTo(lvl.valleyPos.x, lvl.valleyPos.y-40);
+                    ctx.lineTo(lvl.valleyPos.x, lvl.valleyPos.y);
+                    ctx.fill();
+                    
+                    ctx.stroke();
+                    ctx.closePath();
+                });
+                //right
+
+                var playField = JSON.parse( JSON.stringify(lvl.slope));
+                //playField.push([lvl.valleyPos.x -1, lvl.valleyPos.y]);
+
+                var tempplaneBody = new p2.Body({mass:0, position:[0,0]});
+                tempplaneBody.fromPolygon(playField);
+                // planeBody.
+                world.addBody(tempplaneBody);
+
+                var tri3 = new p2.Body({mass:0, position:[0,0]});
+                tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
+                [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet],
+                [lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet],
+                [lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y],
+                [lvl.valleyPos.x + (xOffSet*3) + lvl.width, lvl.valleyPos.y-(yOffSet*2)],
+                [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
+
+                world.addBody(tri3);
+                
+                //this is where the house code that I haven't done yet starts
+                lvl.shapes.forEach(function(shape){
+                    //Bottom left corner
+                    var xStart = lvl.valleyPos.x + shape.pos.x;
+                    var yStart = lvl.valleyPos.y - yOffSet;
+                    //Make main part of house
+                    var body;
+                    if(shape.type === "rect") {
+                        body = new p2.Body({mass:1, position:[0,0]});
+                        body.fromPolygon([[xStart, yStart], [xStart, yStart + shape.height], 
+                        [xStart + shape.width, yStart + shape.height], [xStart + shape.width, yStart]]);
+                        body.type = "rect";
+                        world.addBody(body);
+                    }
+                    if(shape.type == "tri") {
+                        body = new p2.Body({mass:1, position:[0,0]});
+                        body.fromPolygon([[xStart, yStart], [xStart + shape.width/2, yStart + shape.height], 
+                        [xStart + shape.width, yStart]]);
+                        body.type = "tri";
+                        world.addBody(body);
+                    }
+                    
+                });
+
+                lvl.babies.forEach(function(baby){
+                    //addCircle(1, 5, ,"baby");
+                    var circleShape = new p2.Circle(5);
+                    var circleBody = new p2.Body({ mass:1, position:[lvl.valleyPos.x + baby.pos.x, lvl.valleyPos.y - yOffSet +baby.pos.y + 5] });
+                    circleShape.material = new p2.Material();
+                    circleBody.addShape(circleShape);
+                    circleBody.circleType = "baby";
+                    circleBody.lifeTime = 0;
+                    circleBody.trapped = true;
+                    world.addBody(circleBody);
+                });
             }
 
             function makeButton(x, y, w, h, radius, id, active, buttonText, textColor, textSize) {
@@ -312,12 +394,9 @@
                 tempWorld = new p2.World();
 
                 //create the main slope
-                var tempplaneBody = new p2.Body({mass:0, position:[0,0]});
-                tempplaneBody.fromPolygon(JSON.parse( JSON.stringify(lvl.slope)));
-                // planeBody.
-                tempWorld.addBody(tempplaneBody);
+               
                 //Make a level object
-                generateLevel(lvl.slope[29], lvl, tempWorld);
+                generateLevel(lvl.start, lvl, tempWorld);
 
                 tempWorld.on("beginContact", function(evt){
                     if(evt.bodyA.circleType == "circle1" || evt.bodyA.circleType == "circle2" ) {
@@ -505,8 +584,8 @@
                         y3 = tempY;
                     }
                 }
-                slope[verts] = [x2, y3 - 20];
-                slope[verts + 1] = [x1, y3 - 20];
+                //slope[verts] = [x2, y3 - 20];
+                //slope[verts + 1] = [x1, y3 - 20];
                 //done
                 return slope;
             }
@@ -587,7 +666,7 @@
                         var transX = w/4;
                         var transY = h/2;
                         var scaleMult = 1;
-                        
+
                         if(levelState === "BALL_ACTIVE" && spacedown){
                             scaleMult += .1;
                         }
@@ -603,6 +682,7 @@
                                 scaleMult = scaleMult < .7 ? .7 : scaleMult;
                             }
                         });
+
                         // Transform the canvas
                         // Note that we need to flip the y axis since Canvas pixel coordinates
                         // goes from top to bottom, while physics does the opposite.
@@ -805,77 +885,7 @@
                 // Render scene
                 render();
             }
-            //Adds physics objects into the world from a passed in lvl obj
-            //also adds draw callbacks to be drawn by canvas
-            function generateLevel(start, lvl, world) {
-                //Draw callback for the valley, hard coded mostly right now
-                var xOffSet = 10;
-                var yOffSet = 20;
-                levelDrawCallbacks.push(function(){
-                    ctx.fillStyle = "white";
-                    ctx.beginPath();
-                    ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
-                    ctx.lineTo(lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet);
-                    ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
-                    ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y);
-                    
-                    //GHETTO
-                    ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y-40);
-                    ctx.lineTo(lvl.valleyPos.x, lvl.valleyPos.y-40);
-                    ctx.lineTo(lvl.valleyPos.x, lvl.valleyPos.y);
-                    ctx.fill();
-                    
-                    ctx.stroke();
-                    ctx.closePath();
-                });
-                //right
-
-                var tri3 = new p2.Body({mass:0, position:[0,0]});
-                tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
-                [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y - yOffSet],
-                [lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet],
-                [lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y],
-                [lvl.valleyPos.x + (xOffSet*3) + lvl.width, lvl.valleyPos.y-(yOffSet*2)],
-                [lvl.valleyPos.x + xOffSet, lvl.valleyPos.y-(yOffSet*2)]]);
-
-                world.addBody(tri3);
-                
-                //this is where the house code that I haven't done yet starts
-                lvl.shapes.forEach(function(shape){
-                    //Bottom left corner
-                    var xStart = lvl.valleyPos.x + shape.pos.x;
-                    var yStart = lvl.valleyPos.y - yOffSet;
-                    //Make main part of house
-                    var body;
-                    if(shape.type === "rect") {
-                        body = new p2.Body({mass:1, position:[0,0]});
-                        body.fromPolygon([[xStart, yStart], [xStart, yStart + shape.height], 
-                        [xStart + shape.width, yStart + shape.height], [xStart + shape.width, yStart]]);
-                        body.type = "rect";
-                        world.addBody(body);
-                    }
-                    if(shape.type == "tri") {
-                        body = new p2.Body({mass:1, position:[0,0]});
-                        body.fromPolygon([[xStart, yStart], [xStart + shape.width/2, yStart + shape.height], 
-                        [xStart + shape.width, yStart]]);
-                        body.type = "tri";
-                        world.addBody(body);
-                    }
-                    
-                });
-
-                lvl.babies.forEach(function(baby){
-                    //addCircle(1, 5, ,"baby");
-                    var circleShape = new p2.Circle(5);
-                    var circleBody = new p2.Body({ mass:1, position:[lvl.valleyPos.x + baby.pos.x, lvl.valleyPos.y - yOffSet +baby.pos.y + 5] });
-                    circleShape.material = new p2.Material();
-                    circleBody.addShape(circleShape);
-                    circleBody.circleType = "baby";
-                    circleBody.lifeTime = 0;
-                    circleBody.trapped = true;
-                    world.addBody(circleBody);
-                });
-            }
+            
         }());
 
         </script>
