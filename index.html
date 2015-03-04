@@ -850,6 +850,7 @@
                 var dt = calculateDeltaTime();
                 var et = 1/WORLD_SPEED;
                 world.step(et);
+                if(levelComplete) { levelState = "IDLE"; }
                 switch (levelState) {
                     case "BALL_ACTIVE" :
                         endLife = 300;
@@ -915,7 +916,7 @@
                             makeHUD();
                         }
                         if(spacedown) {
-                            if(canFire && shotsLeft > 0){
+                            if(canFire && shotsLeft > 0 && !levelComplete){
                             addCircle(5, 4, [6,20], "circle1");
                             canShoot = false;
                             canFire = false;
