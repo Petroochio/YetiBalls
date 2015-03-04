@@ -533,6 +533,7 @@
                     }
                     if (evt.bodyA.circleType === "circle1" || evt.bodyA.circleType === "circle2" && evt.bodyB.circleType === "baby") {
                         evt.bodyB.trapped = false;
+                        //babynoise
                     };
                 });
 
@@ -932,7 +933,7 @@
 
                         //world.bodies[0].force[0] = 5;
                         collisionObjs.forEach(function(obj){
-                        if((obj.position[0] > 60 || obj.position[1] < -20)  && obj.circleType == "circle1") {
+                        if((obj.position[0] > 60 || obj.position[1] < -40)  && obj.circleType == "circle1") {
                             playEffect();
                             world.bodiesToBeRemoved.push(obj);
 
