@@ -536,7 +536,7 @@
                            collisionObjs.push(evt.bodyA);
                     }
                     if (evt.bodyA.circleType === "circle1" || evt.bodyA.circleType === "circle2" && evt.bodyB.circleType === "baby") {
-                        if(!evt.bodyB.trapped){
+                        if(evt.bodyB.trapped){
                             evt.bodyB.trapped = false;
                             //babynoise
                             yetiFreeAudio.play();
