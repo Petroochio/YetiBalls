@@ -52,7 +52,7 @@
             var transXplus = 2;
             var transYplus = 2;
 
-            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree, menuIcon, replayIcon, nextIcon, snowflakeOutlineImg, snowflakeFillImg,
+            var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree, menuIcon, replayIcon, nextIcon, snowflakeOutlineImg, snowflakeFillImg, levelComplete,
             world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel, levelScore;
 
             var levelDrawCallbacks = [];
@@ -115,6 +115,22 @@
                 
                 //levels
                 levels = JSON.parse(localStorage.getItem('levelsData')) || [
+                    {   
+                        shapes: [],
+                        babies: [{
+                                pos: {x: 20, y: 0}
+                            }
+                        ],
+                        width: 70,
+                        shots: 3,
+                        valleyPos: {x: -10, y: -20},
+                        slope: [],
+                        start: [0,0],
+                        completed: false,
+                        snowflakes: 0,
+                        par: 1,
+                        connectingHill: true
+                    },
                     {
                         shapes: [
                             {
@@ -141,7 +157,8 @@
                         start: slopeVerts[29],
                         completed: false,
                         snowflakes: 0,
-                        par: 1
+                        par: 1,
+                        connectingHill: true
                     },
                     {
                         shapes: [
@@ -175,7 +192,8 @@
                         completed: false,
                         start: slopeVerts[29],
                         snowflakes: 0,
-                        par: 2
+                        par: 2,
+                        connectingHill: true
                     }
                 ];
                 localStorage.setItem('levelsData', JSON.stringify(levels));
@@ -226,14 +244,15 @@
                     ctx.closePath();
                 });
                 //right
+                if(lvl.slope.length > 1) {
+                    var playField = JSON.parse( JSON.stringify(lvl.slope));
+                    //playField.push([lvl.valleyPos.x -1, lvl.valleyPos.y]);
 
-                var playField = JSON.parse( JSON.stringify(lvl.slope));
-                //playField.push([lvl.valleyPos.x -1, lvl.valleyPos.y]);
-
-                var tempplaneBody = new p2.Body({mass:0, position:[0,0]});
-                tempplaneBody.fromPolygon(playField);
-                // planeBody.
-                world.addBody(tempplaneBody);
+                    var tempplaneBody = new p2.Body({mass:0, position:[0,0]});
+                    tempplaneBody.fromPolygon(playField);
+                    // planeBody.
+                    world.addBody(tempplaneBody);
+                }
 
                 var tri3 = new p2.Body({mass:0, position:[0,0]});
                 tri3.fromPolygon([[lvl.valleyPos.x, lvl.valleyPos.y],
@@ -245,6 +264,31 @@
 
                 world.addBody(tri3);
                 
+                if(lvl.connectingHill) {
+                    //ramp shit goes here
+
+                   /* var tri4 = new p2.Body({mass:0, position:[0,0]});
+                    tri3.fromPolygon([[lvl.valleyPos.x -1, lvl.valleyPos.y],
+                    lvl.start, [lvl.valleyPos.x -20, lvl.valleyPos.y]]);
+
+                    world.addBody(tri4);    
+
+                    levelDrawCallbacks.push(function(){
+                        ctx.fillStyle = "white";
+                        ctx.beginPath();
+                        ctx.moveTo(lvl.valleyPos.x, lvl.valleyPos.y);
+                        ctx.lineTo(lvl.valleyPos.x -1, lvl.valleyPos.y);
+                        ctx.lineTo(lvl.valleyPos.x + lvl.width, lvl.valleyPos.y - yOffSet);
+                        ctx.lineTo(lvl.valleyPos.x -20, lvl.valleyPos.y);
+                        
+                        ctx.stroke();
+                        ctx.closePath();
+                        //GHETTO
+                        //ctx.lineTo(lvl.valleyPos.x + xOffSet + lvl.width, lvl.valleyPos.y-40);
+                        ctx.fill();
+                        
+                    });*/
+                }
                 //this is where the house code that I haven't done yet starts
                 lvl.shapes.forEach(function(shape){
                     //Bottom left corner
@@ -380,39 +424,40 @@
                 levelScore = 0;
                 canShoot = true;
                 canFire = true;
-
+                levelComplete = false;
                 /*levelDrawCallbacks.push(function(){
                   ctx.save();
                   ctx.fillStyle = "#c4e8f2";
                   ctx.fillRect(-w,h/2, w*2, -h/2);
                   ctx.restore();
                 });*/
+                if(lvl.slope.length > 1) {
+                    levelDrawCallbacks.push(function(){
+                      ctx.save();
+                      //ctx.strokeStyle = "#d4f8f2";
+                      //Draw the start ramp
+                        
+                        ctx.fillStyle = "white";
+                        
+                      ctx.beginPath();
+                      ctx.moveTo(lvl.slope[1][0], lvl.slope[1][1]);
+                      for(var i = 1; i < lvl.slope.length - 2; i++) {
+                      
+                          ctx.lineTo(lvl.slope[i][0], lvl.slope[i][1]);
+                      }
+                        //Ghetto fix
+                        ctx.lineTo(60, -40);
+                        ctx.lineTo(lvl.slope[1][0], -40);
+                        ctx.lineTo(lvl.slope[1][0], lvl.slope[1][1]);
+                        
+                        ctx.fill();
+                        
+                      ctx.stroke();
+                      ctx.closePath();
 
-                levelDrawCallbacks.push(function(){
-                  ctx.save();
-                  //ctx.strokeStyle = "#d4f8f2";
-                  //Draw the start ramp
-                    
-                    ctx.fillStyle = "white";
-                    
-                  ctx.beginPath();
-                  ctx.moveTo(lvl.slope[1][0], lvl.slope[1][1]);
-                  for(var i = 1; i < lvl.slope.length - 2; i++) {
-                  
-                      ctx.lineTo(lvl.slope[i][0], lvl.slope[i][1]);
-                  }
-                    //Ghetto fix
-                    ctx.lineTo(60, -40);
-                    ctx.lineTo(lvl.slope[1][0], -40);
-                    ctx.lineTo(lvl.slope[1][0], lvl.slope[1][1]);
-                    
-                    ctx.fill();
-                    
-                  ctx.stroke();
-                  ctx.closePath();
-
-                  ctx.restore();
-                });
+                      ctx.restore();
+                    });
+                }
 
                 world = initWorld(lvl);
             }
@@ -614,8 +659,8 @@
                         y3 = tempY;
                     }
                 }
-                //slope[verts] = [x2, y3 - 20];
-                //slope[verts + 1] = [x1, y3 - 20];
+                slope[verts] = [x2, y3 - 20];
+                slope[verts + 1] = [x1, y3 - 20];
                 //done
                 return slope;
             }
@@ -883,6 +928,9 @@
                     default:
                         console.log("LEVEL");
                 }
+                //This is the ghetto kids
+                levelComplete = testForRoundEnd();
+                if(levelComplete) { levelState = "IDLE"; }
             }
 
             //Tests for the end of a round
