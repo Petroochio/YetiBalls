@@ -22,7 +22,11 @@
         <canvas width="600" height="400" id="myCanvas"></canvas>
         <section id="audioControls">
             <audio id="bgMainMenu" src="media/mainmenu.mp3" controls loop></audio>
+            <audio id="bgLevel" src="media/levelbg.wav" controls loop></audio>
             <audio id="effectControl" controls></audio>
+            <audio id="yetiFree" src="media/cagebreak.wav" controls></audio>
+            <audio id="levelWin" src="media/levelwin.mp3" controls></audio>
+            <audio id="levelLose" src="media/levelose.mp3" controls></audio>
         </section>
 
         <script>
@@ -58,8 +62,8 @@
 
             var canvas, ctx, w, h, lastTime, ballImg, triImg, recImg, babyFroz, babyFree, menuIcon, replayIcon, nextIcon, snowflakeOutlineImg, snowflakeFillImg, levelComplete,
             world, circleBody, planeBody, slopeVerts, slopeVerts2, spacedown, currentLevel, levelScore;
-            var mainBGAudio, effectAudio/*, levelBGAudio, yetiFreeAudio*/;
-            var effectSounds = ["snowballHit.wav", "snowballHit.wav", "snowballHit.wav", "snowballHit.wav", "snowballHit.wav", "snowballHit.wav", "snowballHit.wav", "snowballHit.wav"], currentEffect;
+            var mainBGAudio, effectAudio, levelBGAudio, yetiFreeAudio, levelWinAudio, levelLoseAudio;
+            var effectSounds = ["snowballHit.wav", "snowballHit.wav", "snowballHit.wav", "snowballHit.wav"], currentEffect;
 
             var levelDrawCallbacks = [];
             var collisionObjs = [];
@@ -109,9 +113,14 @@
                 
                 //load sounds
                 mainBGAudio = document.querySelector("#bgMainMenu");
-                mainBGAudio.volume = 0.75;
+                mainBGAudio.volume = 0.5;
+                levelBGAudio = document.querySelector("#bgLevel");
+                levelBGAudio.volume = 0.25;
+                levelWinAudio = document.querySelector("#levelWin");
+                levelLoseAudio = document.querySelector("#levelLose");
                 effectAudio = document.querySelector("#effectControl");
                 currentEffect = 0;
+                yetiFreeAudio = document.querySelector("#yetiFree");
                 
                 slopeVerts = generateSlope(0, 60, 30, 0, 30);
                 slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
@@ -573,6 +582,9 @@
                                 
                                 gameState = "GAME_LOOP";
                                 playEffect();
+                                mainBGAudio.pause();
+                                mainBGAudio.currentTime = 0;
+                                levelBGAudio.play();
                                 makeHUD();
                                 var clone = JSON.parse( JSON.stringify(levels[currentLevel]));
                                 resetGame(clone);
@@ -586,6 +598,9 @@
                             mouse.y >= buttons[i].y && mouse.y <= buttons[i].y+buttons[i].h) {
                                 if(buttons[i].id == "menu") {
                                     gameState = "LEVEL_SELECT";
+                                    levelBGAudio.pause();
+                                    levelBGAudio.currentTime = 0;
+                                    mainBGAudio.play();
                                     makeHUD();
                                 } else if(buttons[i].id == "replay") {
                                     gameState = "GAME_LOOP";
@@ -602,6 +617,10 @@
                                     }
                                 }
                                 playEffect();
+                                levelWinAudio.pause();
+                                levelWinAudio.currentTime = 0;
+                                levelLoseAudio.pause();
+                                levelLoseAudio.currentTime = 0;
                             }
                         }
                         break;
@@ -616,6 +635,9 @@
                                 } else if(buttons[i].id == "menu") {
                                     levelState = "IDLE";
                                     gameState = "LEVEL_SELECT";
+                                    levelBGAudio.pause();
+                                    levelBGAudio.currentTime = 0;
+                                    mainBGAudio.play();
                                     makeHUD();
                                 }
                             }
@@ -945,6 +967,7 @@
                         collisionObjs = [];
                         if(testForRoundEnd() && lifeZero) {
                             gameState = "LEVEL_WON";
+                            levelWinAudio.play();
                             levels[currentLevel].completed = true;
                             calculateSnowflakes();
                             localStorage.removeItem('levelsData');
@@ -952,6 +975,7 @@
                             makeHUD();
                         } else if(shotsLeft <= 0 && lifeZero) {
                             gameState = "LEVEL_LOST";
+                            levelLoseAudio.play();
                             makeHUD();
                         }
                         if(spacedown) {
