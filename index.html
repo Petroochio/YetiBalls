@@ -532,9 +532,11 @@
                            collisionObjs.push(evt.bodyA);
                     }
                     if (evt.bodyA.circleType === "circle1" || evt.bodyA.circleType === "circle2" && evt.bodyB.circleType === "baby") {
-                        evt.bodyB.trapped = false;
-                        //babynoise
-                        yetiFreeAudio.play();
+                        if(!evt.bodyB.trapped){
+                            evt.bodyB.trapped = false;
+                            //babynoise
+                            yetiFreeAudio.play();
+                        }
                     };
                 });
 
