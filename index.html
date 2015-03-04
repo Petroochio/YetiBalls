@@ -932,7 +932,7 @@
 
                         //world.bodies[0].force[0] = 5;
                         collisionObjs.forEach(function(obj){
-                        if((obj.position[0] > 60 || obj.position[1] < -30)  && obj.circleType == "circle1") {
+                        if((obj.position[0] > 60 || obj.position[1] < -20)  && obj.circleType == "circle1") {
                             playEffect();
                             world.bodiesToBeRemoved.push(obj);
 
@@ -944,7 +944,7 @@
 
                             canShoot = true;
                             levelState = "IDLE";
-                            } else if(obj.circleType == "circle2" && obj.position[0] < 60 && obj.position[1] > 10){
+                            } else if(obj.circleType == "circle2" && obj.position[0] < 60 && obj.position[1] > -10){
                                 //obj.shapes[0].radius += .1;
                                 console.log('h');
                                 world.bodiesToBeRemoved.push(obj);
@@ -959,7 +959,7 @@
                     case "IDLE" :
                         var lifeZero = (endLife <= 0);
                         collisionObjs.forEach(function(obj){
-                            if(obj.circleType == "circle2" && obj.position[0] < 60){
+                            if(obj.circleType == "circle2" && obj.position[0] < 60 && obj.position[1] > -10){
                                 //obj.shapes[0].radius += .1;
                                 world.bodiesToBeRemoved.push(obj);
                             }
