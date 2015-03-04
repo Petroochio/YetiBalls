@@ -672,8 +672,19 @@
                 ctx.lineWidth = 1;
                 ctx.stroke();
 
+
+
                 ctx.save();
-                if(circle.circleType == "circle1" && spacedown) { ctx.shadowBlur = 20; ctx.shadowColor = "blue";}   
+                if(circle.circleType == "circle1" && spacedown) {
+                    ctx.save();
+                    ctx.fillStyle = "blue"; 
+                    ctx.globalAlpha = 0.2;
+                    ctx.beginPath();
+
+                    ctx.arc(x,y,radius + 1,0,2*Math.PI);
+                    ctx.fill();
+                    ctx.restore();
+                }  
                 ctx.translate(circle.position[0], circle.position[1]);
                 ctx.rotate(circle.angle);
                 ctx.drawImage(ballImg, -1*r, -1*r, r*2, r*2);
