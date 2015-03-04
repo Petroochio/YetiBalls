@@ -142,11 +142,17 @@
                     {   
                         shapes: [],
                         text: [{
-                            words: "wordy wordy",
+                            words: "Space",
                             pos: {x: 0, y:0},
-                            size: 10,
+                            size: 34,
                             color: "black"
-                        }],
+                        },
+                               {
+                                   words:"again",
+                                   pos: {x: 0, y: 40},
+                                   size: 5,
+                                   color: "black"
+                               }],
                         babies: [{
                                 pos: {x: 20, y: 0}
                             }
@@ -164,20 +170,26 @@
                     {
                         shapes: [
                             {
-                                pos: {x: 20, y: 0},
-                                width: 15,
-                                height: 14,
-                                type: "tri"
+                              pos: {x: 20, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
                             },
                             {
-                                pos: {x: 65, y: 0},
-                                width: 15,
+                                pos: {x: 40, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 20, y: 15},
+                                width: 25,
                                 height: 14,
                                 type: "tri"
                             }
                         ],
                         babies: [{
-                                pos: {x: 40, y: 0}
+                                pos: {x: 32, y: 0}
                             }
                         ],
                         width: 100,
@@ -193,36 +205,199 @@
                     {
                         shapes: [
                             {
-                                pos: {x: 65, y: 0},
-                                width: 15,
+                              pos: {x: 30, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 50, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x:30, y:15},
+                                width: 25,
+                                height: 5,
+                                type: "rect"
+                            },
+                            {
+                              pos: {x: 30, y: 20},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 50, y: 20},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 30, y: 35},
+                                width: 25,
                                 height: 14,
                                 type: "tri"
-                            },
-                            {
-                                pos: {x: 40, y: 0},
-                                width: 10,
-                                height: 10,
-                                type: "rect"
-                            },
-                            {
-                                pos: {x: 20, y: 0},
-                                width: 5,
-                                height: 12,
-                                type: "rect"
                             }
                         ],
                         babies: [{
-                                pos: {x: 30, y:0}
+                                pos: {x: 43, y:0}
                             }
                         ],
                         width: 100,
-                        shots: 3,
+                        shots: 5,
                         valleyPos: {x: 115, y: -75},
                         slope: slopeVerts,
                         completed: false,
                         start: slopeVerts[29],
                         snowflakes: 0,
                         par: 2,
+                        connectingHill: true
+                    },
+                    {
+                        shapes: [
+                            {
+                              pos: {x: 30, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 50, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x:30, y:15},
+                                width: 25,
+                                height: 5,
+                                type: "rect"
+                            },
+                            {
+                              pos: {x: 30, y: 20},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 50, y: 20},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 30, y: 35},
+                                width: 25,
+                                height: 14,
+                                type: "tri"
+                            },
+                            {
+                              pos: {x: 60, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 75, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 60, y: 15},
+                                width: 20,
+                                height: 5,
+                                type: "rect"
+                            }
+                        ],
+                        babies: [{
+                                pos: {x: 70, y: 20}
+                            }
+                        ],
+                        width: 100,
+                        shots: 7,
+                        valleyPos: {x: 115, y: -75},
+                        slope: slopeVerts,
+                        start: slopeVerts[29],
+                        completed: false,
+                        snowflakes: 0,
+                        par: 3,
+                        connectingHill: true
+                    },
+                    {
+                        shapes: [
+                            {
+                              pos: {x: 30, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 50, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x:30, y:15},
+                                width: 25,
+                                height: 5,
+                                type: "rect"
+                            },
+                            {
+                              pos: {x: 30, y: 20},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 50, y: 20},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 30, y: 35},
+                                width: 25,
+                                height: 14,
+                                type: "tri"
+                            },
+                            {
+                              pos: {x: 60, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 75, y: 0},
+                                width: 5,
+                                height: 15,
+                                type: "rect"
+                            },
+                            {
+                                pos: {x: 60, y: 15},
+                                width: 20,
+                                height: 5,
+                                type: "rect"
+                            }
+                        ],
+                        babies: [{
+                                pos: {x: 70, y: 20}
+                            },
+                                 {
+                                     pos: {x: 100, y: 30}
+                                 }
+                        ],
+                        width: 100,
+                        shots: 7,
+                        valleyPos: {x: 115, y: -75},
+                        slope: slopeVerts,
+                        start: slopeVerts[29],
+                        completed: false,
+                        snowflakes: 0,
+                        par: 3,
                         connectingHill: true
                     }
                 ];
@@ -330,7 +505,7 @@
                 lvl.shapes.forEach(function(shape){
                     //Bottom left corner
                     var xStart = lvl.valleyPos.x + shape.pos.x;
-                    var yStart = lvl.valleyPos.y - yOffSet;
+                    var yStart = lvl.valleyPos.y + shape.pos.y - 20;
                     //Make main part of house
                     var body;
                     if(shape.type === "rect") {
@@ -435,15 +610,17 @@
                             break;
                         case "LEVEL_SELECT":
                             for(var i = 0; i < levels.length; i++) {
+                                    var y = 100 + 100 * Math.floor((i +1)/ 4);
                                 if(i == 0 || levels[i-1].completed) {
-                                    makeButton(100 + (canvas.width/5 * i), 100,
+                                    console.log(i);
+                                    makeButton(100 + (canvas.width/5 * i), y,
                                                100, 100, 10,
                                                i, true,
                                                (i + 1), "black", 32);
                                 } else {
-                                    makeButton(100 + (canvas.width/5 * i), 100,
+                                    makeButton(100 + (canvas.width/5 * i), y,
                                                100, 100, 10,
-                                               i, levels[i].completed,
+                                               i, /*levels[i].completed*/ true,
                                                (i + 1), "black", 32);
                                 }
                             }
@@ -681,7 +858,7 @@
                     ctx.globalAlpha = 0.2;
                     ctx.beginPath();
 
-                    ctx.arc(x,y,radius + 1,0,2*Math.PI);
+                    ctx.arc(x,y,radius + 2,0,2*Math.PI);
                     ctx.fill();
                     ctx.restore();
                 }  
