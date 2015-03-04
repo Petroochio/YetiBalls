@@ -117,13 +117,19 @@
                 levels = JSON.parse(localStorage.getItem('levelsData')) || [
                     {   
                         shapes: [],
+                        text: [{
+                            words: "wordy wordy",
+                            pos: {x: 0, y:0},
+                            size: 10,
+                            color: "black"
+                        }],
                         babies: [{
                                 pos: {x: 20, y: 0}
                             }
                         ],
                         width: 70,
                         shots: 3,
-                        valleyPos: {x: -10, y: -20},
+                        valleyPos: {x: -10, y: -100},
                         slope: [],
                         start: [0,0],
                         completed: false,
@@ -324,6 +330,19 @@
                     circleBody.trapped = true;
                     world.addBody(circleBody);
                 });
+                if(lvl.text && lvl.text.length > 0){
+                    lvl.text.forEach(function(text){
+                        levelDrawCallbacks.push(function(){
+                            ctx.save();
+                            ctx.scale(1,-1);
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                            drawText(text.words, text.pos.x, text.pos.y, text.size, text.color);
+                            ctx.restore();
+                        });
+                    });
+                }
             }
 
             function makeButton(x, y, w, h, radius, id, active, buttonText, textColor, textSize) {
@@ -601,7 +620,8 @@
                 ctx.lineWidth = 1;
                 ctx.stroke();
 
-                ctx.save();   
+                ctx.save();
+                if(circle.circleType == "circle1" && spacedown) { ctx.shadowBlur = 20; ctx.shadowColor = "blue";}   
                 ctx.translate(circle.position[0], circle.position[1]);
                 ctx.rotate(circle.angle);
                 ctx.drawImage(ballImg, -1*r, -1*r, r*2, r*2);
@@ -738,33 +758,32 @@
                         ctx.restore();
                         break;
                     case "GAME_LOOP" :
-                        var transX = w/4;
+                        var transX = w/2;
                         var transY = h/2;
                         var scaleMult = 1;
 
-                        if(levelState === "BALL_ACTIVE" && spacedown){
-                            scaleMult += .1;
-                        }
 
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
                         
                         world.bodies.forEach(function(body){
                             if(body.circleType == "circle1" ){
-                                if(body.position[0] > 60) 
+                                //if(body.position[0] > 60) 
                                     scaleMult = scaleMult - lerp(60, 60 + levels[currentLevel].width, body.position[0]);
-                                transX = 20-body.position[0];
-                                transY = h/3 + body.position[1];
+                                //transX = 20-body.position[0];
+                                //transY = h/3 + body.position[1];
                                 scaleMult = scaleMult < .7 ? .7 : scaleMult;
+                                transX -= body.position[0] *4* scaleMult;
+                                transY += body.position[1] *4* scaleMult;
                             }
                         });
 
                         // Transform the canvas
                         // Note that we need to flip the y axis since Canvas pixel coordinates
                         // goes from top to bottom, while physics does the opposite.
-                        ctx.translate(transX, transY);
-                        if(canShoot) ctx.scale(2, -2);
-                        else ctx.scale(4*scaleMult, -4*scaleMult);        // Zoom in and flip y axis
-                        
+                        if(!canShoot) {ctx.translate(transX, transY);} else {ctx.translate(w/4, h/2);}
+
+                       if(canShoot) ctx.scale(1.5, -1.5);
+                        else ctx.scale(4*scaleMult, -4*scaleMult);
                         // Draw all bodies
                         levelDrawCallbacks.forEach(function(draw){ draw(); });
 
@@ -789,13 +808,7 @@
                                 body.force[1] = -15;
                             }
                         });
-                        ctx.save();
-                        ctx.scale(1,-1);
-                        drawText("Knock over all of the roofs", 10, -40, 10, "white");
-                        drawText("Balls: " + shotsLeft, 10, -25, 10, "white");
-                        drawText("Press Space!", 10, -15, 10, "white");
-                        // Restore transform
-                        ctx.restore();
+                        
                         break;
                     case "LEVEL_WON":
                         ctx.save();
@@ -875,17 +888,20 @@
 
                         //world.bodies[0].force[0] = 5;
                         collisionObjs.forEach(function(obj){
-                        if(obj.position[0] > 60 && obj.circleType == "circle1") {
+                        if((obj.position[0] > 60 || obj.position[1] < -30)  && obj.circleType == "circle1") {
                             world.bodiesToBeRemoved.push(obj);
+
                             addCircle(1, 2, [obj.position[0] + 2, obj.position[1] - 2], "circle2");
                             addCircle(1, 2, [obj.position[0] - 2, obj.position[1] - 2], "circle2");
                             addCircle(1, 2, [obj.position[0], obj.position[1]], "circle2");
                             addCircle(1, 2, [obj.position[0] + 2, obj.position[1] + 2], "circle2");
                             addCircle(1, 2, [obj.position[0] - 2, obj.position[1] + 2], "circle2");
+
                             canShoot = true;
                             levelState = "IDLE";
-                            } else if(obj.circleType == "circle2" && obj.position[0] < 60){
+                            } else if(obj.circleType == "circle2" && obj.position[0] < 60 && obj.position[1] > 10){
                                 //obj.shapes[0].radius += .1;
+                                console.log('h');
                                 world.bodiesToBeRemoved.push(obj);
                             } else if( obj.circleType == "circle1" && (obj.lifeTime > 300)) {
                                 world.bodiesToBeRemoved.push(obj);
