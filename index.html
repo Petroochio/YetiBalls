@@ -827,6 +827,12 @@
 
 
                         for(var i = 0; i < buttons.length; i++) buttons[i].draw();
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        
+                        drawText("Balls Left: " + shotsLeft, canvas.width/2, 50, 34, "black");
+                        ctx.restore();
                         
                         world.bodies.forEach(function(body){
                             if(body.circleType == "circle1" ){
