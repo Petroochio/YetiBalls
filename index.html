@@ -13,6 +13,9 @@
             canvas {
                 border: 1px solid black;
             }
+            #audioControls {
+                display: none;
+            }
         </style>
 
     </head>
@@ -121,6 +124,7 @@
                 effectAudio = document.querySelector("#effectControl");
                 currentEffect = 0;
                 yetiFreeAudio = document.querySelector("#yetiFree");
+                yetiFreeAudio.volume = 0.25;
                 
                 slopeVerts = generateSlope(0, 60, 30, 0, 30);
                 slopeVerts2 = generateSlope(0, 60, 30, 0, 30);
