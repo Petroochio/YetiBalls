@@ -865,7 +865,7 @@
                         world.bodies.forEach(function(body){
                             if(body.circleType == "circle1" ){
                                 body.lifeTime ++; 
-                                if( body.position[1] < -150) {
+                                if( body.position[1] < -900) {
                                     world.bodiesToBeRemoved.push(body);
                                     canShoot = true;
                                     levelState = "IDLE";  
